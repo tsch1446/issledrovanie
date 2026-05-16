@@ -1,0 +1,82 @@
+[
+  {
+    "id": "q_beer",
+    "analyticsKey": "beer",
+    "text": "Пиво после футбола уважаешь?",
+    "image": "assets/questions/q_beer.jpg",
+    "yesLabel": "Пьют пиво",
+    "noLabel": "Не пьют пиво",
+    "yes": {
+      "reactionImage": "assets/reactions/q_beer_yes.jpg",
+      "reactionText": "Так и знал. Зафиксировали."
+    },
+    "no": {
+      "reactionImage": "assets/reactions/q_beer_no.jpg",
+      "reactionText": "Ответ принят. Но мы оба понимаем, что это ложь."
+    }
+  },
+  {
+    "id": "q_football",
+    "analyticsKey": "football",
+    "text": "Если собрать команду на поле, ты выходишь?",
+    "image": "assets/questions/q_football.jpg",
+    "yesLabel": "Хотят играть в футбол",
+    "noLabel": "Не хотят играть в футбол",
+    "yes": {
+      "reactionImage": "assets/reactions/q_football_yes.jpg",
+      "reactionText": "Записал в основу."
+    },
+    "no": {
+      "reactionImage": "assets/reactions/q_football_no.jpg",
+      "reactionText": "Скамейка запасных тебя уже ждет."
+    }
+  },
+  {
+    "id": "q_bath",
+    "analyticsKey": "bath",
+    "text": "Баня после футбола - это база?",
+    "image": "assets/questions/q_bath.jpg",
+    "yesLabel": "За баню",
+    "noLabel": "Не за баню",
+    "yes": {
+      "reactionImage": "assets/reactions/q_bath_yes.jpg",
+      "reactionText": "Веник готовлю на твое имя."
+    },
+    "no": {
+      "reactionImage": "assets/reactions/q_bath_no.jpg",
+      "reactionText": "Жаль. Но баня все равно будет."
+    }
+  },
+  {
+    "id": "q_free_30",
+    "analyticsKey": "busy_may_30",
+    "text": "30 мая у тебя есть планы, которые нельзя отменить?",
+    "image": "assets/questions/q_free_30.jpg",
+    "yesLabel": "Заняты 30 мая",
+    "noLabel": "Свободны 30 мая",
+    "yes": {
+      "reactionImage": "assets/reactions/q_free_30_yes.jpg",
+      "reactionText": "Хм. Интересно. Подумай еще раз."
+    },
+    "no": {
+      "reactionImage": "assets/reactions/q_free_30_no.jpg",
+      "reactionText": "Отлично. Это пригодится."
+    }
+  },
+  {
+    "id": "q_secret",
+    "analyticsKey": "secret",
+    "text": "Ты умеешь хранить секреты?",
+    "image": "assets/questions/q_secret.jpg",
+    "yesLabel": "Умеют хранить секреты",
+    "noLabel": "Не умеют хранить секреты",
+    "yes": {
+      "reactionImage": "assets/reactions/q_secret_yes.jpg",
+      "reactionText": "Сейчас проверим."
+    },
+    "no": {
+      "reactionImage": "assets/reactions/q_secret_no.jpg",
+      "reactionText": "Честно. Уважаю. Но рискнем."
+    }
+  }
+]

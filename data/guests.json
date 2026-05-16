@@ -1,0 +1,34 @@
+[
+  {
+    "telegramId": 299959249,
+    "name": "Сергей",
+    "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
+    "group": "admin",
+    "finalVariant": "admin_test",
+    "notes": "Тестовый прогон админом"
+  },
+  {
+    "telegramId": 111111111,
+    "name": "Даня",
+    "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
+    "group": "boys",
+    "finalVariant": "boys_all_three",
+    "notes": "Все три дня. Футбол, баня, основное."
+  },
+  {
+    "telegramId": 222222222,
+    "name": "Леша",
+    "days": ["2026-05-30"],
+    "group": "boys",
+    "finalVariant": "boys_30",
+    "notes": "Только основной день."
+  },
+  {
+    "telegramId": 333333333,
+    "name": "Миша",
+    "days": ["2026-05-30", "2026-05-31"],
+    "group": "boys",
+    "finalVariant": "boys_30_31",
+    "notes": "Основной день и афтерпати."
+  }
+]
