@@ -169,12 +169,13 @@ function showWelcome(ready: StateReady): void {
     "welcome",
     `${brandBar()}
      <div class="card hero stagger">
-       <p class="eyebrow">Секретный прогон</p>
+       <p class="eyebrow">Аспирантская работа · Социологический факультет</p>
        <h1 class="title">
-         Привет,
+         Здравствуйте,
          <span class="welcome-name">${escapeHtml(ready.name)}.</span>
        </h1>
-       <p class="body">Есть 3 минуты? Это небольшое исследрование. Отвечай честно. Лучше всего - <span class="serif">не задумывайся.</span></p>
+       <p class="body">Я провожу прикладное социологическое исследование в рамках кандидатской диссертации. Тема — <span class="serif">поведенческие предпочтения мужских дружеских коллективов.</span></p>
+       <p class="body">Опрос займёт примерно 3 минуты. Ответы анонимизируются и используются только в агрегированном виде. Просьба отвечать честно — это важно для валидности выборки.</p>
        <hr class="divider" />
        <ul class="welcome-meta">
          <li>
@@ -182,16 +183,16 @@ function showWelcome(ready: StateReady): void {
            <span class="value">${ready.total}</span>
          </li>
          <li>
-           <span class="label">Время</span>
+           <span class="label">Длительность</span>
            <span class="value">≈ 3 <em>мин</em></span>
          </li>
          <li>
-           <span class="label">Результат</span>
-           <span class="value"><em>неожиданный</em></span>
+           <span class="label">Формат</span>
+           <span class="value"><em>анонимный</em></span>
          </li>
        </ul>
        <div class="actions">
-         <button class="btn" id="start-btn">Поехали</button>
+         <button class="btn" id="start-btn">Дать согласие и продолжить</button>
        </div>
      </div>`,
   );
