@@ -1,27 +1,30 @@
-export type AnswerValue = "yes" | "no";
-
-export interface QuestionReaction {
-  reactionImage: string;
-  reactionText: string;
+export interface QuestionOptionReaction {
+  text: string;
+  image?: string;
 }
+
+export interface QuestionOption {
+  id: string;
+  label: string;
+  analyticsLabel: string;
+  reaction?: QuestionOptionReaction;
+}
+
+export type AudienceTag = "all" | "poker" | "football";
 
 export interface Question {
   id: string;
-  analyticsKey: string;
+  audience: AudienceTag[];
   text: string;
-  image: string;
-  yesLabel: string;
-  noLabel: string;
-  yes: QuestionReaction;
-  no: QuestionReaction;
+  image?: string;
+  options: QuestionOption[];
 }
 
 export interface Guest {
   telegramId: number;
   name: string;
   days: string[];
-  group: string;
-  finalVariant: string;
+  group?: string;
   notes?: string;
 }
 
@@ -44,24 +47,29 @@ export interface AnswerRow {
   telegramId: number;
   questionId: string;
   analyticsKey: string;
-  answer: AnswerValue;
+  answer: string;
   timestamp: string;
 }
 
-// API types (server-client contract)
+// API types
+
+export interface PublicQuestionOption {
+  id: string;
+  label: string;
+  reaction: QuestionOptionReaction | null;
+}
 
 export interface PublicQuestion {
   id: string;
   text: string;
-  image: string;
-  yesReaction: { image: string; text: string };
-  noReaction: { image: string; text: string };
+  image: string | null;
+  options: PublicQuestionOption[];
 }
 
 export interface FinalScreen {
   title: string;
   body: string;
-  image: string;
+  image: string | null;
 }
 
 export interface StateUnknown {
@@ -80,11 +88,6 @@ export interface StateReady {
 }
 
 export type StateResponse = StateUnknown | StateReady;
-
-export interface AnswerRequest {
-  questionId: string;
-  answer: AnswerValue;
-}
 
 export interface AnswerResponse {
   ok: boolean;

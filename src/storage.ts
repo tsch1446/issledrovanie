@@ -1,6 +1,6 @@
 import { Row } from "@libsql/client";
 import { ensureSchema } from "./db";
-import { AnswerRow, AnswerValue, Guest, UserRow } from "./types";
+import { AnswerRow, Guest, UserRow } from "./types";
 import { nowIso } from "./utils";
 
 function rowToUser(r: Row): UserRow {
@@ -20,13 +20,12 @@ function rowToUser(r: Row): UserRow {
 }
 
 function rowToAnswer(r: Row): AnswerRow {
-  const answer = String(r.answer);
   return {
     id: Number(r.id),
     telegramId: Number(r.telegramId),
     questionId: String(r.questionId),
     analyticsKey: String(r.analyticsKey),
-    answer: answer === "yes" ? "yes" : "no",
+    answer: String(r.answer),
     timestamp: String(r.timestamp),
   };
 }
@@ -57,16 +56,14 @@ export async function ensureUser(guest: Guest, tg: TelegramProfile): Promise<Use
                 firstName = COALESCE(?, firstName),
                 lastName = COALESCE(?, lastName),
                 groupName = ?,
-                assignedDays = ?,
-                finalVariant = ?
+                assignedDays = ?
             WHERE telegramId = ?`,
       args: [
         tg.username ?? null,
         tg.firstName ?? null,
         tg.lastName ?? null,
-        guest.group,
+        guest.group ?? null,
         JSON.stringify(guest.days),
-        guest.finalVariant,
         guest.telegramId,
       ],
     });
@@ -77,15 +74,14 @@ export async function ensureUser(guest: Guest, tg: TelegramProfile): Promise<Use
 
   await db.execute({
     sql: `INSERT INTO users (telegramId, username, firstName, lastName, startedAt, completedAt, completed, currentQuestionIndex, groupName, assignedDays, finalVariant)
-          VALUES (?, ?, ?, ?, NULL, NULL, 0, 0, ?, ?, ?)`,
+          VALUES (?, ?, ?, ?, NULL, NULL, 0, 0, ?, ?, NULL)`,
     args: [
       guest.telegramId,
       tg.username ?? null,
       tg.firstName ?? null,
       tg.lastName ?? null,
-      guest.group,
+      guest.group ?? null,
       JSON.stringify(guest.days),
-      guest.finalVariant,
     ],
   });
   const created = await getUser(guest.telegramId);
@@ -148,7 +144,7 @@ export async function saveAnswer(
   telegramId: number,
   questionId: string,
   analyticsKey: string,
-  answer: AnswerValue,
+  optionId: string,
 ): Promise<SaveAnswerResult> {
   const db = await ensureSchema();
   const existing = await db.execute({
@@ -161,7 +157,7 @@ export async function saveAnswer(
   await db.execute({
     sql: `INSERT INTO answers (telegramId, questionId, analyticsKey, answer, timestamp)
           VALUES (?, ?, ?, ?, ?)`,
-    args: [telegramId, questionId, analyticsKey, answer, nowIso()],
+    args: [telegramId, questionId, analyticsKey, optionId, nowIso()],
   });
   return { saved: true, alreadyAnswered: false };
 }

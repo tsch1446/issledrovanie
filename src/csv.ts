@@ -27,9 +27,9 @@ export async function buildAnswersCsv(): Promise<string> {
     "firstName",
     "questionId",
     "questionText",
-    "analyticsKey",
-    "answer",
-    "answerLabel",
+    "optionId",
+    "optionLabel",
+    "analyticsLabel",
     "timestamp",
     "completed",
     "assignedDays",
@@ -46,16 +46,16 @@ export async function buildAnswersCsv(): Promise<string> {
   for (const a of await getAllAnswers()) {
     const u = users.get(a.telegramId);
     const q = questions.get(a.questionId);
-    const label = q ? (a.answer === "yes" ? q.yesLabel : q.noLabel) : "";
+    const option = q?.options.find((o) => o.id === a.answer);
     rows.push([
       a.telegramId,
       u?.username ?? "",
       u?.firstName ?? "",
       a.questionId,
       q?.text ?? "",
-      a.analyticsKey,
       a.answer,
-      label,
+      option?.label ?? "",
+      option?.analyticsLabel ?? "",
       a.timestamp,
       u?.completed === 1 ? "1" : "0",
       u?.assignedDays ?? "",
@@ -70,29 +70,32 @@ export async function buildSummaryCsv(): Promise<string> {
   const header = [
     "questionId",
     "questionText",
-    "analyticsKey",
-    "yesLabel",
-    "noLabel",
-    "yesCount",
-    "noCount",
+    "audience",
+    "optionId",
+    "optionLabel",
+    "analyticsLabel",
+    "count",
+    "percent",
     "totalAnswers",
-    "yesPercent",
-    "noPercent",
   ];
 
   const aggregates = await computeQuestionAggregates();
-  const rows = aggregates.map((a) => [
-    a.questionId,
-    a.questionText,
-    a.analyticsKey,
-    a.yesLabel,
-    a.noLabel,
-    a.yesCount,
-    a.noCount,
-    a.totalAnswers,
-    a.yesPercent,
-    a.noPercent,
-  ]);
+  const rows: Array<Array<unknown>> = [];
+  for (const a of aggregates) {
+    for (const o of a.options) {
+      rows.push([
+        a.questionId,
+        a.questionText,
+        a.audience.join("|"),
+        o.optionId,
+        o.label,
+        o.analyticsLabel,
+        o.count,
+        o.percent,
+        a.totalAnswers,
+      ]);
+    }
+  }
 
   return rowsToCsv(header, rows);
 }

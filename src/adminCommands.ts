@@ -51,8 +51,8 @@ export function registerAdminCommands(bot: Telegraf): void {
       const s = await computeGeneralStats();
       const lines = [
         "Общая статистика:",
-        `Гостей в guests.json: ${s.guestsTotal}`,
-        `Начали опрос: ${s.startedCount}`,
+        `Гостей: ${s.guestsTotal}`,
+        `Начали: ${s.startedCount}`,
         `Завершили: ${s.completedCount}`,
         `Не начали: ${s.notStartedCount}`,
         `Completion rate: ${s.completionRate}%`,
@@ -60,6 +60,9 @@ export function registerAdminCommands(bot: Telegraf): void {
         `Приглашены 29 мая: ${s.invited29}`,
         `Приглашены 30 мая: ${s.invited30}`,
         `Приглашены 31 мая: ${s.invited31}`,
+        "",
+        `Покер-когорта: ${s.pokerCohort}`,
+        `Футбол-когорта: ${s.footballCohort}`,
       ];
       await ctx.reply(lines.join("\n"));
     }),
@@ -75,12 +78,11 @@ export function registerAdminCommands(bot: Telegraf): void {
         return;
       }
       const blocks = aggs.map((a) => {
-        return [
-          `${a.questionId}: ${a.questionText}`,
-          `Да: ${a.yesCount} (${a.yesPercent}%)`,
-          `Нет: ${a.noCount} (${a.noPercent}%)`,
-          `Всего: ${a.totalAnswers}`,
-        ].join("\n");
+        const head = `${a.questionId} [${a.audience.join("|")}]: ${a.questionText}`;
+        const opts = a.options
+          .map((o) => `  ${o.label}: ${o.count} (${o.percent}%)`)
+          .join("\n");
+        return `${head}\n${opts}\nВсего: ${a.totalAnswers}`;
       });
       await ctx.reply(blocks.join("\n\n"));
     }),
@@ -101,24 +103,18 @@ export function registerAdminCommands(bot: Telegraf): void {
         await ctx.reply(`Вопрос "${qid}" не найден.`);
         return;
       }
-      const fmt = (label: string, list: typeof detail.yes) => {
-        if (list.length === 0) return `${label}: никто`;
-        const names = list
+      const blocks = detail.groups.map((g) => {
+        if (g.entries.length === 0) return `${g.label}: никто`;
+        const names = g.entries
           .map((e) => {
             const u = e.username ? `@${e.username}` : "";
             const fn = e.firstName ?? "";
             return `${fn || "(без имени)"} ${u} [${e.telegramId}]`.trim();
           })
           .join("\n  ");
-        return `${label} (${list.length}):\n  ${names}`;
-      };
-      const out = [
-        `${detail.questionId}: ${detail.questionText}`,
-        "",
-        fmt(`Да - ${detail.yesLabel}`, detail.yes),
-        "",
-        fmt(`Нет - ${detail.noLabel}`, detail.no),
-      ].join("\n");
+        return `${g.label} (${g.entries.length}):\n  ${names}`;
+      });
+      const out = [`${detail.questionId}: ${detail.questionText}`, "", ...blocks].join("\n\n");
       await ctx.reply(out);
     }),
   );
@@ -188,15 +184,15 @@ export function registerAdminCommands(bot: Telegraf): void {
         `Назначенные дни: ${report.assignedDays.join(", ") || "-"}`,
         `Начал: ${report.user?.startedAt ?? "нет"}`,
         `Завершил: ${report.user?.completedAt ?? "нет"}`,
-        `Текущий индекс вопроса: ${report.user?.currentQuestionIndex ?? "-"}`,
+        `Текущий индекс: ${report.user?.currentQuestionIndex ?? "-"}`,
         "",
         "Ответы:",
       ];
       for (const a of report.answers) {
-        if (a.answer === null) {
+        if (a.optionId === null) {
           lines.push(`  ${a.questionId}: нет ответа`);
         } else {
-          lines.push(`  ${a.questionId}: ${a.answer} (${a.label})`);
+          lines.push(`  ${a.questionId}: ${a.optionId}${a.optionLabel ? ` (${a.optionLabel})` : ""}`);
         }
       }
       await ctx.reply(lines.join("\n"));
@@ -293,8 +289,7 @@ export function registerAdminCommands(bot: Telegraf): void {
       await logAdminCommand(ctx, "guests", []);
       const list = loadGuests();
       const lines = list.map(
-        (g) =>
-          `- ${g.name} [${g.telegramId}] ${g.group} ${g.days.join(",")} ${g.finalVariant}`,
+        (g) => `- ${g.name} [${g.telegramId}] ${g.group ?? "-"} ${g.days.join(",")}`,
       );
       await ctx.reply(`Гости (${list.length}):\n${lines.join("\n")}`);
     }),

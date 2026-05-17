@@ -1,3 +1,4 @@
+import { deriveCohorts } from "./cohorts";
 import { loadGuests } from "./guests";
 import { loadQuestions } from "./scenario";
 import {
@@ -5,7 +6,7 @@ import {
   getAllUsers,
   getAnswersByQuestion,
 } from "./storage";
-import { AnswerRow, UserRow } from "./types";
+import { AnswerRow, Question, UserRow } from "./types";
 
 export interface GeneralStats {
   guestsTotal: number;
@@ -16,6 +17,8 @@ export interface GeneralStats {
   invited29: number;
   invited30: number;
   invited31: number;
+  pokerCohort: number;
+  footballCohort: number;
 }
 
 export async function computeGeneralStats(): Promise<GeneralStats> {
@@ -32,6 +35,14 @@ export async function computeGeneralStats(): Promise<GeneralStats> {
   const invited30 = guests.filter((g) => g.days.includes("2026-05-30")).length;
   const invited31 = guests.filter((g) => g.days.includes("2026-05-31")).length;
 
+  let pokerCohort = 0;
+  let footballCohort = 0;
+  for (const g of guests) {
+    const c = deriveCohorts(g.days);
+    if (c.hasPoker) pokerCohort++;
+    if (c.hasFootball) footballCohort++;
+  }
+
   return {
     guestsTotal: guests.length,
     startedCount: started,
@@ -41,20 +52,25 @@ export async function computeGeneralStats(): Promise<GeneralStats> {
     invited29,
     invited30,
     invited31,
+    pokerCohort,
+    footballCohort,
   };
+}
+
+export interface OptionAggregate {
+  optionId: string;
+  label: string;
+  analyticsLabel: string;
+  count: number;
+  percent: number;
 }
 
 export interface QuestionAggregate {
   questionId: string;
   questionText: string;
-  analyticsKey: string;
-  yesLabel: string;
-  noLabel: string;
-  yesCount: number;
-  noCount: number;
+  audience: string[];
   totalAnswers: number;
-  yesPercent: number;
-  noPercent: number;
+  options: OptionAggregate[];
 }
 
 export async function computeQuestionAggregates(): Promise<QuestionAggregate[]> {
@@ -62,22 +78,27 @@ export async function computeQuestionAggregates(): Promise<QuestionAggregate[]> 
   const out: QuestionAggregate[] = [];
   for (const q of questions) {
     const rows = await getAnswersByQuestion(q.id);
-    const yesCount = rows.filter((r) => r.answer === "yes").length;
-    const noCount = rows.filter((r) => r.answer === "no").length;
-    const total = yesCount + noCount;
-    const yesPercent = total > 0 ? Math.round((yesCount / total) * 100) : 0;
-    const noPercent = total > 0 ? 100 - yesPercent : 0;
+    const total = rows.length;
+    const counts = new Map<string, number>();
+    for (const r of rows) {
+      counts.set(r.answer, (counts.get(r.answer) ?? 0) + 1);
+    }
+    const options: OptionAggregate[] = q.options.map((o) => {
+      const c = counts.get(o.id) ?? 0;
+      return {
+        optionId: o.id,
+        label: o.label,
+        analyticsLabel: o.analyticsLabel,
+        count: c,
+        percent: total > 0 ? Math.round((c / total) * 100) : 0,
+      };
+    });
     out.push({
       questionId: q.id,
       questionText: q.text,
-      analyticsKey: q.analyticsKey,
-      yesLabel: q.yesLabel,
-      noLabel: q.noLabel,
-      yesCount,
-      noCount,
+      audience: q.audience,
       totalAnswers: total,
-      yesPercent,
-      noPercent,
+      options,
     });
   }
   return out;
@@ -87,17 +108,21 @@ export interface QuestionDetailEntry {
   telegramId: number;
   username: string | null;
   firstName: string | null;
-  answer: "yes" | "no";
+  optionId: string;
+  optionLabel: string;
   timestamp: string;
+}
+
+export interface QuestionDetailGroup {
+  optionId: string;
+  label: string;
+  entries: QuestionDetailEntry[];
 }
 
 export interface QuestionDetail {
   questionId: string;
   questionText: string;
-  yesLabel: string;
-  noLabel: string;
-  yes: QuestionDetailEntry[];
-  no: QuestionDetailEntry[];
+  groups: QuestionDetailGroup[];
 }
 
 export async function computeQuestionDetail(questionId: string): Promise<QuestionDetail | null> {
@@ -107,33 +132,31 @@ export async function computeQuestionDetail(questionId: string): Promise<Questio
 
   const rows = await getAnswersByQuestion(questionId);
   const users = new Map<number, UserRow>();
-  for (const u of await getAllUsers()) {
-    users.set(u.telegramId, u);
-  }
+  for (const u of await getAllUsers()) users.set(u.telegramId, u);
 
-  const yes: QuestionDetailEntry[] = [];
-  const no: QuestionDetailEntry[] = [];
+  const groups: QuestionDetailGroup[] = q.options.map((o) => ({
+    optionId: o.id,
+    label: o.label,
+    entries: [],
+  }));
+  const groupByOption = new Map<string, QuestionDetailGroup>();
+  for (const g of groups) groupByOption.set(g.optionId, g);
+
   for (const r of rows) {
     const u = users.get(r.telegramId);
-    const entry: QuestionDetailEntry = {
+    const group = groupByOption.get(r.answer);
+    if (!group) continue;
+    group.entries.push({
       telegramId: r.telegramId,
       username: u?.username ?? null,
       firstName: u?.firstName ?? null,
-      answer: r.answer,
+      optionId: r.answer,
+      optionLabel: group.label,
       timestamp: r.timestamp,
-    };
-    if (r.answer === "yes") yes.push(entry);
-    else no.push(entry);
+    });
   }
 
-  return {
-    questionId: q.id,
-    questionText: q.text,
-    yesLabel: q.yesLabel,
-    noLabel: q.noLabel,
-    yes,
-    no,
-  };
+  return { questionId: q.id, questionText: q.text, groups };
 }
 
 export interface InsightLine {
@@ -145,8 +168,9 @@ export async function computeInsights(): Promise<InsightLine[]> {
   const aggregates = await computeQuestionAggregates();
   const out: InsightLine[] = [];
   for (const a of aggregates) {
-    out.push({ label: a.yesLabel, count: a.yesCount });
-    out.push({ label: a.noLabel, count: a.noCount });
+    for (const o of a.options) {
+      out.push({ label: o.analyticsLabel, count: o.count });
+    }
   }
   return out;
 }
@@ -196,9 +220,14 @@ export interface UserStatusReport {
   answers: Array<{
     questionId: string;
     questionText: string;
-    answer: "yes" | "no" | null;
-    label: string | null;
+    optionId: string | null;
+    optionLabel: string | null;
   }>;
+}
+
+function optionLabel(q: Question, optionId: string): string | null {
+  const o = q.options.find((x) => x.id === optionId);
+  return o?.label ?? null;
 }
 
 export async function computeUserStatus(telegramId: number): Promise<UserStatusReport> {
@@ -212,10 +241,14 @@ export async function computeUserStatus(telegramId: number): Promise<UserStatusR
   const rows = questions.map((q) => {
     const ans = answersMap.get(q.id);
     if (!ans) {
-      return { questionId: q.id, questionText: q.text, answer: null, label: null };
+      return { questionId: q.id, questionText: q.text, optionId: null, optionLabel: null };
     }
-    const label = ans.answer === "yes" ? q.yesLabel : q.noLabel;
-    return { questionId: q.id, questionText: q.text, answer: ans.answer, label };
+    return {
+      questionId: q.id,
+      questionText: q.text,
+      optionId: ans.answer,
+      optionLabel: optionLabel(q, ans.answer),
+    };
   });
 
   return {

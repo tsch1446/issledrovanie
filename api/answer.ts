@@ -12,7 +12,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       res,
       await handleAnswer(a, {
         questionId: body.questionId,
-        answer: body.answer,
+        optionId: body.optionId,
       }),
     );
   } catch (err) {

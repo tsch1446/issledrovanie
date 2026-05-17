@@ -1,82 +1,249 @@
 [
   {
-    "id": "q_beer",
-    "analyticsKey": "beer",
-    "text": "Пиво после футбола уважаешь?",
-    "image": "assets/questions/q_beer.jpg",
-    "yesLabel": "Пьют пиво",
-    "noLabel": "Не пьют пиво",
-    "yes": {
-      "reactionImage": "assets/reactions/q_beer_yes.jpg",
-      "reactionText": "Так и знал. Зафиксировали."
-    },
-    "no": {
-      "reactionImage": "assets/reactions/q_beer_no.jpg",
-      "reactionText": "Ответ принят. Но мы оба понимаем, что это ложь."
-    }
+    "id": "q_mood",
+    "audience": ["all"],
+    "text": "Как дела по жизни?",
+    "options": [
+      {
+        "id": "good",
+        "label": "Хорошо / держусь",
+        "analyticsLabel": "Дела нормально",
+        "reaction": { "text": "Принято." }
+      },
+      {
+        "id": "bad",
+        "label": "Лучше не спрашивай",
+        "analyticsLabel": "Дела сомнительно",
+        "reaction": { "text": "Понимаю. Это лечится." }
+      }
+    ]
+  },
+  {
+    "id": "q_friends",
+    "audience": ["all"],
+    "text": "Друзей любишь?",
+    "options": [
+      {
+        "id": "yes",
+        "label": "Да",
+        "analyticsLabel": "Любят друзей",
+        "reaction": { "text": "Это база." }
+      },
+      {
+        "id": "no",
+        "label": "Нет",
+        "analyticsLabel": "Делают вид, что не любят друзей",
+        "reaction": { "text": "Серьезный подход. Зафиксировали." }
+      }
+    ]
+  },
+  {
+    "id": "q_together",
+    "audience": ["all"],
+    "text": "Скучаешь по моментам, когда все вместе?",
+    "options": [
+      {
+        "id": "yes",
+        "label": "Да",
+        "analyticsLabel": "Скучают по движу",
+        "reaction": { "text": "Запомнили." }
+      },
+      {
+        "id": "no",
+        "label": "Нет",
+        "analyticsLabel": "Подозрительно не скучают",
+        "reaction": { "text": "Странно. Но ответ принят." }
+      }
+    ]
+  },
+  {
+    "id": "q_summer",
+    "audience": ["all"],
+    "text": "Ждешь лето?",
+    "options": [
+      {
+        "id": "yes",
+        "label": "Да",
+        "analyticsLabel": "Ждут лето",
+        "reaction": { "text": "Уже скоро." }
+      },
+      {
+        "id": "no",
+        "label": "Нет",
+        "analyticsLabel": "Не ждут лето",
+        "reaction": { "text": "Странный человек. Записали." }
+      }
+    ]
+  },
+  {
+    "id": "q_friday_evening",
+    "audience": ["poker"],
+    "text": "Как ты больше любишь проводить вечер пятницы?",
+    "options": [
+      {
+        "id": "library",
+        "label": "В библиотеке в одиночестве",
+        "analyticsLabel": "Выбрали библиотеку",
+        "reaction": { "text": "Сильный выбор. Неправильный, но сильный." }
+      },
+      {
+        "id": "poker",
+        "label": "Покер с братвой",
+        "analyticsLabel": "Выбрали покер с братвой",
+        "reaction": { "text": "Вот теперь исследование стало научным." }
+      }
+    ]
+  },
+  {
+    "id": "q_life_role",
+    "audience": ["poker"],
+    "text": "Кто ты по жизни?",
+    "options": [
+      {
+        "id": "six",
+        "label": "Шестерка",
+        "analyticsLabel": "Шестерки",
+        "reaction": { "text": "Самокритика - редкое качество." }
+      },
+      {
+        "id": "king",
+        "label": "Король",
+        "analyticsLabel": "Короли",
+        "reaction": { "text": "Корона зафиксирована. Посмотрим за столом." }
+      }
+    ]
+  },
+  {
+    "id": "q_clothes",
+    "audience": ["poker"],
+    "text": "Какой стиль одежды ты предпочитаешь?",
+    "options": [
+      {
+        "id": "homeless",
+        "label": "Бомжатский",
+        "analyticsLabel": "Бомжатский стиль",
+        "reaction": { "text": "Понял. Дресс-код: рискованный." }
+      },
+      {
+        "id": "solid",
+        "label": "Солидный",
+        "analyticsLabel": "Солидный стиль",
+        "reaction": { "text": "Отлично. Уважаемый человек идет." }
+      }
+    ]
+  },
+  {
+    "id": "q_poker_battle",
+    "audience": ["poker"],
+    "text": "Готов к серьезной зарубе за покерным столом?",
+    "options": [
+      {
+        "id": "pass",
+        "label": "Я пас",
+        "analyticsLabel": "Пасуют",
+        "reaction": { "text": "Пас принят. Но не одобрен." }
+      },
+      {
+        "id": "ready",
+        "label": "Готов",
+        "analyticsLabel": "Готовы к зарубе",
+        "reaction": { "text": "Вот это настрой. Карты уже нервничают." }
+      }
+    ]
   },
   {
     "id": "q_football",
-    "analyticsKey": "football",
-    "text": "Если собрать команду на поле, ты выходишь?",
-    "image": "assets/questions/q_football.jpg",
-    "yesLabel": "Хотят играть в футбол",
-    "noLabel": "Не хотят играть в футбол",
-    "yes": {
-      "reactionImage": "assets/reactions/q_football_yes.jpg",
-      "reactionText": "Записал в основу."
-    },
-    "no": {
-      "reactionImage": "assets/reactions/q_football_no.jpg",
-      "reactionText": "Скамейка запасных тебя уже ждет."
-    }
+    "audience": ["football"],
+    "text": "Ты любишь играть в футбол?",
+    "options": [
+      {
+        "id": "yes",
+        "label": "Да",
+        "analyticsLabel": "Любят играть в футбол",
+        "reaction": { "text": "Записал в основу." }
+      },
+      {
+        "id": "no",
+        "label": "Нет",
+        "analyticsLabel": "Не любят играть в футбол",
+        "reaction": { "text": "Скамейка запасных тебя уже ждет." }
+      }
+    ]
+  },
+  {
+    "id": "q_beer",
+    "audience": ["football"],
+    "text": "Пиво после футбола уважаешь?",
+    "options": [
+      {
+        "id": "yes",
+        "label": "Да",
+        "analyticsLabel": "Пиво уважают",
+        "reaction": { "text": "Так и знал. Зафиксировали." }
+      },
+      {
+        "id": "no",
+        "label": "Нет",
+        "analyticsLabel": "Пиво не уважают",
+        "reaction": { "text": "Ответ принят. Но мы оба понимаем." }
+      }
+    ]
   },
   {
     "id": "q_bath",
-    "analyticsKey": "bath",
-    "text": "Баня после футбола - это база?",
-    "image": "assets/questions/q_bath.jpg",
-    "yesLabel": "За баню",
-    "noLabel": "Не за баню",
-    "yes": {
-      "reactionImage": "assets/reactions/q_bath_yes.jpg",
-      "reactionText": "Веник готовлю на твое имя."
-    },
-    "no": {
-      "reactionImage": "assets/reactions/q_bath_no.jpg",
-      "reactionText": "Жаль. Но баня все равно будет."
-    }
+    "audience": ["football"],
+    "text": "После футбола баня звучит как правильное решение?",
+    "options": [
+      {
+        "id": "yes",
+        "label": "Да",
+        "analyticsLabel": "За баню",
+        "reaction": { "text": "Веник готовлю на твое имя." }
+      },
+      {
+        "id": "no",
+        "label": "Нет",
+        "analyticsLabel": "Не за баню",
+        "reaction": { "text": "Жаль. Но баня все равно будет." }
+      }
+    ]
   },
   {
-    "id": "q_free_30",
-    "analyticsKey": "busy_may_30",
-    "text": "30 мая у тебя есть планы, которые нельзя отменить?",
-    "image": "assets/questions/q_free_30.jpg",
-    "yesLabel": "Заняты 30 мая",
-    "noLabel": "Свободны 30 мая",
-    "yes": {
-      "reactionImage": "assets/reactions/q_free_30_yes.jpg",
-      "reactionText": "Хм. Интересно. Подумай еще раз."
-    },
-    "no": {
-      "reactionImage": "assets/reactions/q_free_30_no.jpg",
-      "reactionText": "Отлично. Это пригодится."
-    }
+    "id": "q_meat",
+    "audience": ["football"],
+    "text": "Любишь сочное мясо на шампурах в хорошей компании?",
+    "options": [
+      {
+        "id": "yes",
+        "label": "Да",
+        "analyticsLabel": "За мясо",
+        "reaction": { "text": "Шашлык записал на тебя." }
+      },
+      {
+        "id": "no",
+        "label": "Нет",
+        "analyticsLabel": "Не за мясо",
+        "reaction": { "text": "Овощной угол выделен." }
+      }
+    ]
   },
   {
-    "id": "q_secret",
-    "analyticsKey": "secret",
-    "text": "Ты умеешь хранить секреты?",
-    "image": "assets/questions/q_secret.jpg",
-    "yesLabel": "Умеют хранить секреты",
-    "noLabel": "Не умеют хранить секреты",
-    "yes": {
-      "reactionImage": "assets/reactions/q_secret_yes.jpg",
-      "reactionText": "Сейчас проверим."
-    },
-    "no": {
-      "reactionImage": "assets/reactions/q_secret_no.jpg",
-      "reactionText": "Честно. Уважаю. Но рискнем."
-    }
+    "id": "q_ucl_winner",
+    "audience": ["football"],
+    "text": "Кто заберет финал ЛЧ?",
+    "options": [
+      {
+        "id": "arsenal",
+        "label": "Арсенал",
+        "analyticsLabel": "Верят в Арсенал",
+        "reaction": { "text": "Сильно. Уважаю выбор." }
+      },
+      {
+        "id": "psg",
+        "label": "ПСЖ",
+        "analyticsLabel": "Верят в ПСЖ",
+        "reaction": { "text": "Принято. Посмотрим в субботу." }
+      }
+    ]
   }
 ]

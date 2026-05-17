@@ -1,6 +1,5 @@
 import type {
   AnswerResponse,
-  AnswerValue,
   CompleteResponse,
   StateResponse,
 } from "./types";
@@ -40,8 +39,8 @@ export function notifyStart(): Promise<{ ok: boolean }> {
   return call<{ ok: boolean }>("/api/start");
 }
 
-export function sendAnswer(questionId: string, answer: AnswerValue): Promise<AnswerResponse> {
-  return call<AnswerResponse>("/api/answer", { questionId, answer });
+export function sendAnswer(questionId: string, optionId: string): Promise<AnswerResponse> {
+  return call<AnswerResponse>("/api/answer", { questionId, optionId });
 }
 
 export function sendComplete(): Promise<CompleteResponse> {

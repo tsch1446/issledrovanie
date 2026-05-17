@@ -1,19 +1,22 @@
 // Mirror of server API types. Keep in sync with src/types.ts.
 
-export type AnswerValue = "yes" | "no";
+export interface PublicQuestionOption {
+  id: string;
+  label: string;
+  reaction: { text: string; image?: string } | null;
+}
 
 export interface PublicQuestion {
   id: string;
   text: string;
-  image: string;
-  yesReaction: { image: string; text: string };
-  noReaction: { image: string; text: string };
+  image: string | null;
+  options: PublicQuestionOption[];
 }
 
 export interface FinalScreen {
   title: string;
   body: string;
-  image: string;
+  image: string | null;
 }
 
 export interface StateUnknown {

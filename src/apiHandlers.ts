@@ -1,7 +1,8 @@
 import { extractInitDataFromHeader, validateInitData, ValidatedInitData } from "./auth";
+import { deriveCohorts, questionMatchesAudience } from "./cohorts";
 import { getGuestById } from "./guests";
 import { buildFinalContent } from "./renderText";
-import { loadQuestions, questionsCount } from "./scenario";
+import { loadQuestions } from "./scenario";
 import {
   ensureUser,
   getUser,
@@ -13,11 +14,11 @@ import {
 } from "./storage";
 import {
   AnswerResponse,
-  AnswerValue,
   CompleteResponse,
   FinalScreen,
   Guest,
   PublicQuestion,
+  Question,
   StateReady,
   StateResponse,
 } from "./types";
@@ -45,39 +46,39 @@ export function authenticate(req: RequestLike): AuthResult | { error: string; st
   return { init: validated };
 }
 
-function publicAssetPath(rel: string): string {
-  if (!rel) return "";
+function publicAssetPath(rel: string | undefined | null): string | null {
+  if (!rel) return null;
   const cleaned = rel.replace(/^\/+/, "");
   return "/" + cleaned;
 }
 
-function toPublicQuestions(): PublicQuestion[] {
-  return loadQuestions().map((q) => ({
+function questionsForGuest(guest: Guest): Question[] {
+  const cohorts = deriveCohorts(guest.days);
+  return loadQuestions().filter((q) => questionMatchesAudience(q.audience, cohorts));
+}
+
+function toPublicQuestion(q: Question): PublicQuestion {
+  return {
     id: q.id,
     text: q.text,
     image: publicAssetPath(q.image),
-    yesReaction: {
-      image: publicAssetPath(q.yes.reactionImage),
-      text: q.yes.reactionText,
-    },
-    noReaction: {
-      image: publicAssetPath(q.no.reactionImage),
-      text: q.no.reactionText,
-    },
-  }));
+    options: q.options.map((o) => ({
+      id: o.id,
+      label: o.label,
+      reaction: o.reaction
+        ? { text: o.reaction.text, image: publicAssetPath(o.reaction.image) ?? undefined }
+        : null,
+    })),
+  };
 }
 
 function buildFinalScreen(guest: Guest): FinalScreen {
   const c = buildFinalContent(guest.name, guest.days);
-  return {
-    title: c.title,
-    body: c.body,
-    image: publicAssetPath(`assets/finals/${guest.finalVariant}.jpg`),
-  };
+  return { title: c.title, body: c.body, image: null };
 }
 
-export async function handleState(auth: AuthResult): Promise<StateResponse> {
-  const init = auth.init;
+export async function handleState(authResult: AuthResult): Promise<StateResponse> {
+  const init = authResult.init;
   const guest = getGuestById(init.user.id);
   if (!guest) {
     await logEvent(init.user.id, "miniapp_unknown_user");
@@ -88,13 +89,14 @@ export async function handleState(auth: AuthResult): Promise<StateResponse> {
     firstName: init.user.firstName,
     lastName: init.user.lastName,
   });
+  const filtered = questionsForGuest(guest);
   const body: StateReady = {
     status: "ready",
     name: guest.name,
-    total: questionsCount(),
+    total: filtered.length,
     currentIndex: user.currentQuestionIndex,
     completed: user.completed === 1,
-    questions: toPublicQuestions(),
+    questions: filtered.map(toPublicQuestion),
     final: buildFinalScreen(guest),
   };
   return body;
@@ -104,8 +106,8 @@ export type HandlerResult<T> =
   | { ok: true; status: number; body: T }
   | { ok: false; status: number; body: { error: string; [k: string]: unknown } };
 
-export async function handleStart(auth: AuthResult): Promise<HandlerResult<{ ok: true }>> {
-  const init = auth.init;
+export async function handleStart(authResult: AuthResult): Promise<HandlerResult<{ ok: true }>> {
+  const init = authResult.init;
   const guest = getGuestById(init.user.id);
   if (!guest) return { ok: false, status: 403, body: { error: "not in guest list" } };
   const user = await ensureUser(guest, {
@@ -123,19 +125,19 @@ export async function handleStart(auth: AuthResult): Promise<HandlerResult<{ ok:
 
 export interface AnswerInput {
   questionId: unknown;
-  answer: unknown;
+  optionId: unknown;
 }
 
 export async function handleAnswer(
-  auth: AuthResult,
+  authResult: AuthResult,
   input: AnswerInput,
 ): Promise<HandlerResult<AnswerResponse>> {
-  const init = auth.init;
+  const init = authResult.init;
   const guest = getGuestById(init.user.id);
   if (!guest) return { ok: false, status: 403, body: { error: "not in guest list" } };
 
-  const { questionId, answer } = input;
-  if (typeof questionId !== "string" || (answer !== "yes" && answer !== "no")) {
+  const { questionId, optionId } = input;
+  if (typeof questionId !== "string" || typeof optionId !== "string") {
     return { ok: false, status: 400, body: { error: "invalid payload" } };
   }
 
@@ -151,9 +153,9 @@ export async function handleAnswer(
     };
   }
 
-  const questions = loadQuestions();
+  const filtered = questionsForGuest(guest);
   const idx = user.currentQuestionIndex;
-  const currentQ = questions[idx];
+  const currentQ = filtered[idx];
   if (!currentQ || currentQ.id !== questionId) {
     return {
       ok: false,
@@ -162,12 +164,12 @@ export async function handleAnswer(
     };
   }
 
-  const result = await saveAnswer(
-    init.user.id,
-    currentQ.id,
-    currentQ.analyticsKey,
-    answer as AnswerValue,
-  );
+  const option = currentQ.options.find((o) => o.id === optionId);
+  if (!option) {
+    return { ok: false, status: 400, body: { error: "unknown optionId for this question" } };
+  }
+
+  const result = await saveAnswer(init.user.id, currentQ.id, currentQ.id, option.id);
   if (result.alreadyAnswered) {
     return {
       ok: true,
@@ -176,8 +178,8 @@ export async function handleAnswer(
     };
   }
   await setCurrentQuestionIndex(init.user.id, idx + 1);
-  await logEvent(init.user.id, "answer_saved", { questionId: currentQ.id, answer });
-  log("answer_saved", { telegramId: init.user.id, questionId: currentQ.id, answer });
+  await logEvent(init.user.id, "answer_saved", { questionId: currentQ.id, optionId: option.id });
+  log("answer_saved", { telegramId: init.user.id, questionId: currentQ.id, optionId: option.id });
   return {
     ok: true,
     status: 200,
@@ -185,8 +187,8 @@ export async function handleAnswer(
   };
 }
 
-export async function handleComplete(auth: AuthResult): Promise<HandlerResult<CompleteResponse>> {
-  const init = auth.init;
+export async function handleComplete(authResult: AuthResult): Promise<HandlerResult<CompleteResponse>> {
+  const init = authResult.init;
   const guest = getGuestById(init.user.id);
   if (!guest) return { ok: false, status: 403, body: { error: "not in guest list" } };
   const user = await getUser(init.user.id);
@@ -198,7 +200,8 @@ export async function handleComplete(auth: AuthResult): Promise<HandlerResult<Co
       body: { ok: true, completedAt: user.completedAt },
     };
   }
-  if (user.currentQuestionIndex < questionsCount()) {
+  const filtered = questionsForGuest(guest);
+  if (user.currentQuestionIndex < filtered.length) {
     return { ok: false, status: 409, body: { error: "not all questions answered" } };
   }
   await markCompleted(init.user.id);

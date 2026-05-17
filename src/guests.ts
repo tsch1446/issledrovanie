@@ -24,21 +24,9 @@ function validateGuest(raw: unknown, idx: number): Guest {
     }
     return d;
   });
-  if (typeof g.group !== "string" || g.group.trim() === "") {
-    throw new Error(`guests.json: item ${idx} has invalid group`);
-  }
-  if (typeof g.finalVariant !== "string" || g.finalVariant.trim() === "") {
-    throw new Error(`guests.json: item ${idx} has invalid finalVariant`);
-  }
+  const group = typeof g.group === "string" ? g.group : undefined;
   const notes = typeof g.notes === "string" ? g.notes : undefined;
-  return {
-    telegramId: g.telegramId,
-    name: g.name,
-    days,
-    group: g.group,
-    finalVariant: g.finalVariant,
-    notes,
-  };
+  return { telegramId: g.telegramId, name: g.name, days, group, notes };
 }
 
 export function loadGuests(): Guest[] {
@@ -58,9 +46,7 @@ export function loadGuests(): Guest[] {
     throw new Error(`guests.json is not valid JSON: ${(err as Error).message}`);
   }
 
-  if (!Array.isArray(parsed)) {
-    throw new Error("guests.json must be a JSON array");
-  }
+  if (!Array.isArray(parsed)) throw new Error("guests.json must be a JSON array");
 
   const items = parsed.map((g, i) => validateGuest(g, i));
   const ids = new Set<number>();

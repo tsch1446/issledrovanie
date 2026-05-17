@@ -1,8 +1,8 @@
 import { getState, notifyStart, sendAnswer, sendComplete } from "./api";
 import type {
-  AnswerValue,
   FinalScreen,
   PublicQuestion,
+  PublicQuestionOption,
   StateReady,
 } from "./types";
 
@@ -11,7 +11,7 @@ type Screen = "loading" | "unknown" | "welcome" | "question" | "reaction" | "fin
 interface AppState {
   ready: StateReady | null;
   questionIndex: number;
-  lastReaction: { image: string; text: string } | null;
+  lastReaction: { image?: string; text: string } | null;
 }
 
 const state: AppState = {
@@ -62,12 +62,12 @@ function progressDots(total: number, current: number): string {
   return `<div class="progress">${dots.join("")}</div>`;
 }
 
-function imageTag(src: string): string {
+function imageTag(src: string | null | undefined): string {
   if (!src) return "";
   return `<img class="image" src="${escapeHtml(src)}" alt="" onerror="this.classList.add('missing')" />`;
 }
 
-function preloadImages(srcs: string[]): void {
+function preloadImages(srcs: Array<string | null | undefined>): void {
   for (const src of srcs) {
     if (!src) continue;
     const img = new Image();
@@ -175,8 +175,7 @@ function showWelcome(ready: StateReady): void {
 function currentQuestion(): PublicQuestion | null {
   const r = state.ready;
   if (!r) return null;
-  const q = r.questions[state.questionIndex];
-  return q ?? null;
+  return r.questions[state.questionIndex] ?? null;
 }
 
 function showQuestion(): void {
@@ -188,6 +187,12 @@ function showQuestion(): void {
     return;
   }
 
+  const optionsHtml = q.options
+    .map(
+      (o, i) => `<button class="btn ${i === 0 ? "secondary" : ""}" data-option-id="${escapeHtml(o.id)}">${escapeHtml(o.label)}</button>`,
+    )
+    .join("");
+
   renderScreen(
     "question",
     `${progressDots(ready.total, state.questionIndex)}
@@ -195,37 +200,49 @@ function showQuestion(): void {
        <p class="kicker">Вопрос ${state.questionIndex + 1} из ${ready.total}</p>
        ${imageTag(q.image)}
        <h2 class="subtitle">${escapeHtml(q.text)}</h2>
-       <div class="actions row">
-         <button class="btn secondary" data-answer="no">Нет</button>
-         <button class="btn" data-answer="yes">Да</button>
+       <div class="actions">
+         ${optionsHtml}
        </div>
      </div>`,
   );
 
-  const buttons = root.querySelectorAll<HTMLButtonElement>("button[data-answer]");
+  const buttons = root.querySelectorAll<HTMLButtonElement>("button[data-option-id]");
   buttons.forEach((btn) => {
     btn.addEventListener("click", () => {
-      const answer = btn.dataset.answer as AnswerValue;
-      void onAnswer(q, answer, buttons);
+      const optionId = btn.dataset.optionId ?? "";
+      const option = q.options.find((o) => o.id === optionId) ?? null;
+      void onAnswer(q, option, buttons);
     });
   });
 }
 
 async function onAnswer(
   q: PublicQuestion,
-  answer: AnswerValue,
+  option: PublicQuestionOption | null,
   buttons: NodeListOf<HTMLButtonElement>,
 ): Promise<void> {
+  if (!option) return;
   buttons.forEach((b) => (b.disabled = true));
-  haptic(answer === "yes" ? "medium" : "light");
+  haptic("medium");
   try {
-    const res = await sendAnswer(q.id, answer);
+    const res = await sendAnswer(q.id, option.id);
     if (res.alreadyAnswered) {
       toast("Ответ уже зафиксирован");
     }
     state.questionIndex = res.currentIndex;
-    state.lastReaction = answer === "yes" ? q.yesReaction : q.noReaction;
-    showReaction();
+    state.lastReaction = option.reaction
+      ? { text: option.reaction.text, image: option.reaction.image }
+      : null;
+    if (state.lastReaction) {
+      showReaction();
+    } else {
+      // No reaction configured - go straight to next question
+      if (state.questionIndex < (state.ready?.total ?? 0)) {
+        showQuestion();
+      } else {
+        void completeFlow();
+      }
+    }
   } catch (err) {
     buttons.forEach((b) => (b.disabled = false));
     showError((err as Error).message);
@@ -245,7 +262,7 @@ function showReaction(): void {
     `${progressDots(ready.total, Math.min(state.questionIndex, ready.total - 1))}
      <div class="card">
        <p class="kicker">Зафиксировано</p>
-       ${imageTag(reaction.image)}
+       ${imageTag(reaction.image ?? null)}
        <p class="body">${escapeHtml(reaction.text)}</p>
        <div class="actions">
          <button class="btn" id="next-btn">${buttonLabel}</button>
@@ -327,17 +344,20 @@ async function bootstrap(): Promise<void> {
     state.ready = data;
     state.questionIndex = data.currentIndex;
 
-    preloadImages([
-      data.final.image,
-      ...data.questions.flatMap((q) => [q.image, q.yesReaction.image, q.noReaction.image]),
-    ]);
+    const imageSources: Array<string | null | undefined> = [data.final.image];
+    for (const q of data.questions) {
+      imageSources.push(q.image);
+      for (const o of q.options) {
+        imageSources.push(o.reaction?.image);
+      }
+    }
+    preloadImages(imageSources);
 
     if (data.completed) {
       showFinal(data.final);
       return;
     }
     if (data.currentIndex > 0 && data.currentIndex < data.total) {
-      // Resume mid-quiz
       showQuestion();
       return;
     }
