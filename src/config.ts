@@ -18,8 +18,8 @@ export interface AppConfig {
 }
 
 function readConfig(): AppConfig {
-  const botToken = process.env.BOT_TOKEN;
-  if (!botToken || botToken.trim() === "") {
+  const botToken = (process.env.BOT_TOKEN ?? "").trim();
+  if (botToken === "") {
     throw new Error("BOT_TOKEN is not set");
   }
 
