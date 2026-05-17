@@ -10,99 +10,117 @@
 
   {
     "username": "maskon_fuckit",
-    "name": "Maskon",
+    "name": "Андрюха",
     "days": ["2026-05-29"],
     "group": "poker"
   },
   {
     "username": "levski1301",
-    "name": "Levski",
+    "name": "Левчик",
     "days": ["2026-05-29"],
     "group": "poker"
   },
   {
     "username": "oda_mclovin",
-    "name": "Oda",
+    "name": "Димасик",
     "days": ["2026-05-29"],
     "group": "poker"
   },
   {
     "username": "wen0tequal",
-    "name": "Wen",
+    "name": "Рус",
     "days": ["2026-05-29"],
     "group": "poker"
   },
 
   {
     "username": "densoboldr",
-    "name": "Denis",
+    "name": "Денчик",
     "days": ["2026-05-30"],
     "group": "football"
   },
   {
     "username": "max_selevich",
-    "name": "Max",
+    "name": "Максончик",
     "days": ["2026-05-30"],
     "group": "football"
   },
   {
     "username": "j0rdanwhy",
-    "name": "Jordan",
+    "name": "Никитосик",
     "days": ["2026-05-30"],
     "group": "football"
   },
 
   {
     "username": "pavel_norik",
-    "name": "Pavel",
+    "name": "Пашок",
     "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
     "group": "all"
   },
   {
     "username": "r_liubanevich",
-    "name": "Roma",
+    "name": "Ромыч",
     "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
     "group": "all"
   },
   {
     "username": "jgsss1",
-    "name": "JG",
+    "name": "Ега",
     "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
     "group": "all"
   },
   {
     "username": "knotai_99",
-    "name": "Knotai",
+    "name": "Эд",
     "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
     "group": "all"
   },
   {
     "username": "pushkin488",
-    "name": "Pushkin",
+    "name": "Севчик",
     "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
     "group": "all"
   },
   {
     "username": "nikijumbo",
-    "name": "Niki",
+    "name": "Никита",
     "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
     "group": "all"
   },
   {
     "username": "reunytg",
-    "name": "Reun",
+    "name": "Гарик",
     "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
     "group": "all"
   },
   {
     "username": "ceeaceede",
-    "name": "Cee",
+    "name": "Семыч",
     "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
     "group": "all"
   },
   {
     "username": "shvi_pa",
-    "name": "Shvi",
+    "name": "Вовчик",
+    "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
+    "group": "all"
+  },
+  {
+    "username": "cwt788",
+    "name": "Белка",
+    "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
+    "group": "all"
+  },
+  {
+    "username": "roma5844",
+    "name": "Ромчик",
+    "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
+    "group": "all"
+  },
+  {
+    "username": "Art_Gritsen",
+    "name": "Темик",
     "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
     "group": "all"
   }
