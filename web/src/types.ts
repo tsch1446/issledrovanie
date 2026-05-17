@@ -3,7 +3,7 @@
 export interface PublicQuestionOption {
   id: string;
   label: string;
-  reaction: { text: string; image?: string } | null;
+  reaction: { text: string; image?: string; images?: string[] } | null;
 }
 
 export interface PublicQuestion {

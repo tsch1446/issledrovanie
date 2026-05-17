@@ -1,6 +1,7 @@
 export interface QuestionOptionReaction {
   text: string;
   image?: string;
+  images?: string[];
 }
 
 export interface QuestionOption {
@@ -56,7 +57,7 @@ export interface AnswerRow {
 export interface PublicQuestionOption {
   id: string;
   label: string;
-  reaction: QuestionOptionReaction | null;
+  reaction: { text: string; image?: string; images?: string[] } | null;
 }
 
 export interface PublicQuestion {

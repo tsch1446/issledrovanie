@@ -11,7 +11,7 @@ type Screen = "loading" | "unknown" | "welcome" | "question" | "reaction" | "fin
 interface AppState {
   ready: StateReady | null;
   questionIndex: number;
-  lastReaction: { image?: string; text: string } | null;
+  lastReaction: { images: string[]; text: string } | null;
 }
 
 const state: AppState = {
@@ -65,6 +65,12 @@ function progressDots(total: number, current: number): string {
 function imageTag(src: string | null | undefined): string {
   if (!src) return "";
   return `<img class="image" src="${escapeHtml(src)}" alt="" onerror="this.classList.add('missing')" />`;
+}
+
+function imageStackTag(srcs: string[]): string {
+  if (srcs.length === 0) return "";
+  if (srcs.length === 1) return imageTag(srcs[0]);
+  return `<div class="image-stack">${srcs.map((s) => imageTag(s)).join("")}</div>`;
 }
 
 function preloadImages(srcs: Array<string | null | undefined>): void {
@@ -230,9 +236,15 @@ async function onAnswer(
       toast("Ответ уже зафиксирован");
     }
     state.questionIndex = res.currentIndex;
-    state.lastReaction = option.reaction
-      ? { text: option.reaction.text, image: option.reaction.image }
-      : null;
+    if (option.reaction) {
+      const r = option.reaction;
+      const images: string[] = [];
+      if (r.images && r.images.length > 0) images.push(...r.images);
+      else if (r.image) images.push(r.image);
+      state.lastReaction = { text: r.text, images };
+    } else {
+      state.lastReaction = null;
+    }
     if (state.lastReaction) {
       showReaction();
     } else {
@@ -262,7 +274,7 @@ function showReaction(): void {
     `${progressDots(ready.total, Math.min(state.questionIndex, ready.total - 1))}
      <div class="card">
        <p class="kicker">Зафиксировано</p>
-       ${imageTag(reaction.image ?? null)}
+       ${imageStackTag(reaction.images)}
        <p class="body">${escapeHtml(reaction.text)}</p>
        <div class="actions">
          <button class="btn" id="next-btn">${buttonLabel}</button>
@@ -348,7 +360,9 @@ async function bootstrap(): Promise<void> {
     for (const q of data.questions) {
       imageSources.push(q.image);
       for (const o of q.options) {
-        imageSources.push(o.reaction?.image);
+        if (!o.reaction) continue;
+        if (o.reaction.images) imageSources.push(...o.reaction.images);
+        else imageSources.push(o.reaction.image);
       }
     }
     preloadImages(imageSources);

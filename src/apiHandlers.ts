@@ -64,13 +64,20 @@ function toPublicQuestion(q: Question): PublicQuestion {
     id: q.id,
     text: q.text,
     image: publicAssetPath(q.image),
-    options: q.options.map((o) => ({
-      id: o.id,
-      label: o.label,
-      reaction: o.reaction
-        ? { text: o.reaction.text, image: publicAssetPath(o.reaction.image) ?? undefined }
-        : null,
-    })),
+    options: q.options.map((o) => {
+      if (!o.reaction) return { id: o.id, label: o.label, reaction: null };
+      const r = o.reaction;
+      const images = r.images?.map((p) => publicAssetPath(p) as string).filter(Boolean);
+      return {
+        id: o.id,
+        label: o.label,
+        reaction: {
+          text: r.text,
+          image: publicAssetPath(r.image) ?? undefined,
+          images: images && images.length > 0 ? images : undefined,
+        },
+      };
+    }),
   };
 }
 

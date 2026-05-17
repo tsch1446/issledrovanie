@@ -26,9 +26,15 @@ function validateOption(raw: unknown, qIdx: number, oIdx: number): QuestionOptio
     if (!isStringField(reactionRaw.text)) {
       throw new Error(`questions.json: q[${qIdx}].options[${oIdx}].reaction.text is required when reaction is present`);
     }
+    let images: string[] | undefined;
+    if (Array.isArray(reactionRaw.images)) {
+      images = reactionRaw.images.filter((s): s is string => typeof s === "string" && s.length > 0);
+      if (images.length === 0) images = undefined;
+    }
     reaction = {
       text: reactionRaw.text as string,
       image: typeof reactionRaw.image === "string" ? reactionRaw.image : undefined,
+      images,
     };
   }
   return {
