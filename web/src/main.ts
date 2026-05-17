@@ -61,7 +61,7 @@ function progressBar(total: number, current: number): string {
       <div class="progress-track">
         <div class="progress-fill" style="width:${pct}%"></div>
       </div>
-      <div class="progress-count">${shown} / ${total}</div>
+      <div class="progress-count">${shown}<span class="total"> / ${total}</span></div>
     </div>
   `;
 }
@@ -101,12 +101,17 @@ function toast(text: string): void {
   }, 2200);
 }
 
+function brandBar(label: string = "ИССЛЕДРОВАНИЕ"): string {
+  return `<div class="brand"><span class="dot"></span>${escapeHtml(label)}</div>`;
+}
+
 function showLoading(): void {
   renderScreen(
     "loading",
-    `<div class="card center">
+    `${brandBar()}
+     <div class="card center">
        <div class="spinner"></div>
-       <p class="muted">Загружаем исследрование</p>
+       <p class="muted">Подключаемся</p>
      </div>`,
   );
 }
@@ -114,13 +119,14 @@ function showLoading(): void {
 function showUnknown(telegramId: number): void {
   renderScreen(
     "unknown",
-    `<div class="card">
-       <p class="kicker">Доступ</p>
-       <h1 class="title">Тебя нет в списке исследрования</h1>
-       <p class="body">Это закрытый прогон. Если ты считаешь, что должен быть в списке - скинь Сергею свой Telegram ID.</p>
+    `${brandBar("ДОСТУП ЗАКРЫТ")}
+     <div class="card stagger">
+       <p class="eyebrow hot">Доступ</p>
+       <h1 class="title">Тебя нет в <em>списке</em>.</h1>
+       <p class="body">Это закрытый прогон. Если ты считаешь, что должен быть в списке - скинь Сергею свой Telegram ID, он добавит.</p>
        <div class="error-block">
-         <p class="muted">Твой Telegram ID:</p>
-         <p class="subtitle" id="copy-id">${telegramId}</p>
+         <p class="muted">Твой Telegram ID</p>
+         <span class="id-chip" id="copy-id">${telegramId}</span>
        </div>
        <div class="actions">
          <button class="btn" id="copy-btn">Скопировать ID</button>
@@ -142,9 +148,10 @@ function showUnknown(telegramId: number): void {
 function showError(message: string): void {
   renderScreen(
     "error",
-    `<div class="card">
-       <p class="kicker error-block" style="padding-left:8px">Ошибка</p>
-       <h1 class="title">Что-то пошло не так</h1>
+    `${brandBar()}
+     <div class="card stagger">
+       <p class="eyebrow hot">Ошибка</p>
+       <h1 class="title">Что-то пошло не так.</h1>
        <p class="body">${escapeHtml(message)}</p>
        <div class="actions">
          <button class="btn" id="retry-btn">Попробовать снова</button>
@@ -160,12 +167,31 @@ function showError(message: string): void {
 function showWelcome(ready: StateReady): void {
   renderScreen(
     "welcome",
-    `<div class="card">
-       <p class="kicker">Исследрование</p>
-       <h1 class="title">Привет, ${escapeHtml(ready.name)}.</h1>
-       <p class="body">Есть 3 минуты? Это небольшое исследрование. ${ready.total} коротких вопросов. Отвечай честно.</p>
+    `${brandBar()}
+     <div class="card hero stagger">
+       <p class="eyebrow">Секретный прогон</p>
+       <h1 class="title">
+         Привет,
+         <span class="welcome-name">${escapeHtml(ready.name)}.</span>
+       </h1>
+       <p class="body">Есть 3 минуты? Это небольшое исследрование. Отвечай честно. Лучше всего - <span class="serif">не задумывайся.</span></p>
+       <hr class="divider" />
+       <ul class="welcome-meta">
+         <li>
+           <span class="label">Вопросов</span>
+           <span class="value">${ready.total}</span>
+         </li>
+         <li>
+           <span class="label">Время</span>
+           <span class="value">≈ 3 <em>мин</em></span>
+         </li>
+         <li>
+           <span class="label">Результат</span>
+           <span class="value"><em>неожиданный</em></span>
+         </li>
+       </ul>
        <div class="actions">
-         <button class="btn" id="start-btn">Начать</button>
+         <button class="btn" id="start-btn">Поехали</button>
        </div>
      </div>`,
   );
@@ -270,8 +296,9 @@ function showQuestion(): void {
 
   renderScreen(
     "question",
-    `${progressBar(ready.total, state.questionIndex)}
-     <div class="card">
+    `${brandBar()}
+     ${progressBar(ready.total, state.questionIndex)}
+     <div class="card stagger">
        ${imageTag(q.image)}
        <h2 class="subtitle">${escapeHtml(q.text)}</h2>
        <div class="actions">
@@ -339,9 +366,10 @@ function showReaction(): void {
 
   renderScreen(
     "reaction",
-    `${progressBar(ready.total, Math.min(state.questionIndex, ready.total - 1))}
-     <div class="card">
-       <p class="kicker success">Зафиксировано</p>
+    `${brandBar()}
+     ${progressBar(ready.total, Math.min(state.questionIndex, ready.total - 1))}
+     <div class="card stagger">
+       <p class="eyebrow success">Зафиксировано</p>
        ${imageStackTag(reaction.images)}
        <p class="body">${escapeHtml(reaction.text)}</p>
        <div class="actions">
@@ -413,8 +441,9 @@ function fireConfetti(): void {
 function showFinal(final: FinalScreen): void {
   renderScreen(
     "final",
-    `<div class="card">
-       <p class="kicker success">Исследрование завершено</p>
+    `${brandBar("РЕЗУЛЬТАТ")}
+     <div class="card final-card stagger">
+       <p class="eyebrow success">Исследрование завершено</p>
        ${imageTag(final.image)}
        <h1 class="final-title">${escapeHtml(final.title)}</h1>
        <p class="final-body">${escapeHtml(final.body)}</p>
