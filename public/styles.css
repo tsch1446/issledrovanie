@@ -197,6 +197,76 @@ main {
   animation: image-in 420ms var(--ease-out) both;
 }
 
+/* Intro video screen: edge-to-edge, no skip */
+.intro-shell {
+  position: relative;
+  width: 100%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: #000;
+  box-shadow: var(--shadow-lg);
+}
+
+.intro-shell video {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #000;
+}
+
+/* Overlay swallows taps so the video can't be paused / scrubbed */
+.intro-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: transparent;
+  cursor: default;
+}
+
+/* Tap-to-play fallback when autoplay-with-sound is blocked */
+.intro-tap-cta {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  background: color-mix(in srgb, #000 70%, transparent);
+  color: white;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  text-align: center;
+  padding: 24px;
+}
+
+.intro-tap-cta.show {
+  display: flex;
+}
+
+.intro-tap-cta .play-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.intro-tap-cta .play-icon::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 18px solid var(--accent-text);
+  border-top: 12px solid transparent;
+  border-bottom: 12px solid transparent;
+  margin-left: 4px;
+}
+
 .actions {
   display: flex;
   flex-direction: column;

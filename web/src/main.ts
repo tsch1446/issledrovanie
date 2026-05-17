@@ -170,56 +170,81 @@ function showWelcome(ready: StateReady): void {
      </div>`,
   );
   const btn = document.getElementById("start-btn") as HTMLButtonElement | null;
-  btn?.addEventListener("click", async () => {
+  btn?.addEventListener("click", () => {
     haptic("medium");
     btn.disabled = true;
-    try {
-      await notifyStart();
-      showIntro();
-    } catch (err) {
-      showError((err as Error).message);
-    }
+    // Fire and forget; do NOT await — preserving the user gesture is required
+    // for the browser to allow video.play() with audio in the next call.
+    void notifyStart().catch(() => {
+      // non-critical; quiz will still record at first answer
+    });
+    showIntro();
   });
 }
 
 function showIntro(): void {
   renderScreen(
     "intro",
-    `<div class="card">
+    `<div class="intro-shell">
        <video
-         class="video"
          id="intro-video"
          src="/welcome.MP4"
          playsinline
          autoplay
-         muted
-         controls
          preload="auto"
        ></video>
-       <div class="actions">
-         <button class="btn" id="intro-next-btn">Дальше</button>
+       <div class="intro-overlay" aria-hidden="true"></div>
+       <div class="intro-tap-cta" id="intro-tap-cta">
+         <div class="play-icon"></div>
+         <div>Нажми, чтобы запустить</div>
        </div>
      </div>`,
   );
+
   const video = document.getElementById("intro-video") as HTMLVideoElement | null;
-  const btn = document.getElementById("intro-next-btn") as HTMLButtonElement | null;
-  // Attempt to start playback (some browsers reject autoplay even when muted).
-  video?.play().catch(() => {
-    // user can tap the native controls to start
-  });
-  // When the video finishes, gently nudge the user with haptic
-  video?.addEventListener("ended", () => {
-    haptic("light");
-  });
-  btn?.addEventListener("click", () => {
-    haptic("medium");
+  const tapCta = document.getElementById("intro-tap-cta") as HTMLDivElement | null;
+  if (!video) {
+    showQuestion();
+    return;
+  }
+
+  let advanced = false;
+  const goNext = () => {
+    if (advanced) return;
+    advanced = true;
     try {
-      video?.pause();
+      video.pause();
     } catch {
       // ignore
     }
     showQuestion();
-  });
+  };
+
+  video.addEventListener("ended", goNext);
+  // Defensive: if browser fires "error" or video URL is broken, still advance
+  video.addEventListener("error", goNext);
+
+  // Try to play with sound right away (we're inside the click handler call stack).
+  const playAttempt = video.play();
+  if (playAttempt && typeof playAttempt.then === "function") {
+    playAttempt.catch(() => {
+      // Autoplay-with-sound was blocked. Show a tap-to-play overlay.
+      if (tapCta) {
+        tapCta.classList.add("show");
+        const start = () => {
+          tapCta.classList.remove("show");
+          tapCta.removeEventListener("click", start);
+          video.play().catch(() => {
+            // Last resort: skip straight to question 1
+            goNext();
+          });
+        };
+        tapCta.addEventListener("click", start);
+      } else {
+        goNext();
+      }
+    });
+  }
 }
 
 function currentQuestion(): PublicQuestion | null {
