@@ -7,7 +7,7 @@ import type {
   StateReady,
 } from "./types";
 
-type Screen = "loading" | "unknown" | "welcome" | "question" | "reaction" | "final" | "error";
+type Screen = "loading" | "unknown" | "welcome" | "intro" | "question" | "reaction" | "final" | "error";
 
 interface AppState {
   ready: StateReady | null;
@@ -175,10 +175,50 @@ function showWelcome(ready: StateReady): void {
     btn.disabled = true;
     try {
       await notifyStart();
-      showQuestion();
+      showIntro();
     } catch (err) {
       showError((err as Error).message);
     }
+  });
+}
+
+function showIntro(): void {
+  renderScreen(
+    "intro",
+    `<div class="card">
+       <video
+         class="video"
+         id="intro-video"
+         src="/welcome.MP4"
+         playsinline
+         autoplay
+         muted
+         controls
+         preload="auto"
+       ></video>
+       <div class="actions">
+         <button class="btn" id="intro-next-btn">Дальше</button>
+       </div>
+     </div>`,
+  );
+  const video = document.getElementById("intro-video") as HTMLVideoElement | null;
+  const btn = document.getElementById("intro-next-btn") as HTMLButtonElement | null;
+  // Attempt to start playback (some browsers reject autoplay even when muted).
+  video?.play().catch(() => {
+    // user can tap the native controls to start
+  });
+  // When the video finishes, gently nudge the user with haptic
+  video?.addEventListener("ended", () => {
+    haptic("light");
+  });
+  btn?.addEventListener("click", () => {
+    haptic("medium");
+    try {
+      video?.pause();
+    } catch {
+      // ignore
+    }
+    showQuestion();
   });
 }
 

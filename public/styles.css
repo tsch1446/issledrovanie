@@ -188,6 +188,15 @@ main {
   gap: 10px;
 }
 
+.video {
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+  display: block;
+  background: var(--surface-2);
+  animation: image-in 420ms var(--ease-out) both;
+}
+
 .actions {
   display: flex;
   flex-direction: column;
