@@ -26,6 +26,49 @@ import {
 } from "./types";
 import { log } from "./utils";
 
+// Admin-only "view as" overrides: synthetic guest with the chosen day set,
+// so the admin can step through what each cohort actually sees.
+const VIEW_AS_DAYS: Record<string, string[]> = {
+  poker: ["2026-05-29"],
+  football: ["2026-05-30"],
+  football_ext: ["2026-05-30", "2026-05-31"],
+  all: ["2026-05-29", "2026-05-30", "2026-05-31"],
+};
+
+function isAdminUser(telegramId: number): boolean {
+  return telegramId === config.adminTelegramId;
+}
+
+function maybeViewAsGuest(
+  init: ValidatedInitData,
+  viewAsRaw: unknown,
+): Guest | null {
+  if (!isAdminUser(init.user.id)) return null;
+  if (typeof viewAsRaw !== "string") return null;
+  const key = viewAsRaw.toLowerCase();
+  const days = VIEW_AS_DAYS[key];
+  if (!days) return null;
+  const labels: Record<string, string> = {
+    poker: "Покер-вью",
+    football: "Футбол-вью",
+    football_ext: "Футбол+вс-вью",
+    all: "Все-3-вью",
+  };
+  return {
+    telegramId: init.user.id,
+    username: init.user.username ?? undefined,
+    name: labels[key] ?? "Тест",
+    days,
+    group: "test",
+    notes: `View-as: ${key}`,
+  };
+}
+
+function extractViewAs(body: unknown): unknown {
+  if (!body || typeof body !== "object") return undefined;
+  return (body as Record<string, unknown>).viewAs;
+}
+
 export interface RequestLike {
   headers: Record<string, string | string[] | undefined>;
   body?: unknown;
@@ -86,12 +129,36 @@ function buildFinalScreen(guest: Guest): FinalScreen {
   return { title: c.title, body: c.body, image: null };
 }
 
-function isAdminUser(telegramId: number): boolean {
-  return telegramId === config.adminTelegramId;
-}
-
-export async function handleState(authResult: AuthResult): Promise<StateResponse> {
+export async function handleState(
+  authResult: AuthResult,
+  reqBody: unknown = null,
+): Promise<StateResponse> {
   const init = authResult.init;
+
+  // Admin "view-as" preview: if the body carries a valid viewAs, synthesize a
+  // guest with that day set and start the run fresh.
+  const viewAsGuest = maybeViewAsGuest(init, extractViewAs(reqBody));
+  if (viewAsGuest) {
+    await ensureUser(init.user.id, viewAsGuest, {
+      username: init.user.username,
+      firstName: init.user.firstName,
+      lastName: init.user.lastName,
+    });
+    await resetUserProgress(init.user.id);
+    await logEvent(init.user.id, "admin_view_as", { key: viewAsGuest.notes });
+    const filtered = questionsForGuest(viewAsGuest);
+    const body: StateReady = {
+      status: "ready",
+      name: viewAsGuest.name,
+      total: filtered.length,
+      currentIndex: 0,
+      completed: false,
+      questions: filtered.map(toPublicQuestion),
+      final: buildFinalScreen(viewAsGuest),
+    };
+    return body;
+  }
+
   const guest = findGuest(init.user.id, init.user.username);
   if (!guest) {
     await logEvent(init.user.id, "miniapp_unknown_user");
@@ -130,9 +197,14 @@ export type HandlerResult<T> =
   | { ok: true; status: number; body: T }
   | { ok: false; status: number; body: { error: string; [k: string]: unknown } };
 
-export async function handleStart(authResult: AuthResult): Promise<HandlerResult<{ ok: true }>> {
+export async function handleStart(
+  authResult: AuthResult,
+  reqBody: unknown = null,
+): Promise<HandlerResult<{ ok: true }>> {
   const init = authResult.init;
-  const guest = findGuest(init.user.id, init.user.username);
+  const guest =
+    maybeViewAsGuest(init, extractViewAs(reqBody)) ??
+    findGuest(init.user.id, init.user.username);
   if (!guest) return { ok: false, status: 403, body: { error: "not in guest list" } };
   const user = await ensureUser(init.user.id, guest, {
     username: init.user.username,
@@ -150,6 +222,7 @@ export async function handleStart(authResult: AuthResult): Promise<HandlerResult
 export interface AnswerInput {
   questionId: unknown;
   optionId: unknown;
+  viewAs?: unknown;
 }
 
 export async function handleAnswer(
@@ -157,7 +230,9 @@ export async function handleAnswer(
   input: AnswerInput,
 ): Promise<HandlerResult<AnswerResponse>> {
   const init = authResult.init;
-  const guest = findGuest(init.user.id, init.user.username);
+  const guest =
+    maybeViewAsGuest(init, input.viewAs) ??
+    findGuest(init.user.id, init.user.username);
   if (!guest) return { ok: false, status: 403, body: { error: "not in guest list" } };
 
   const { questionId, optionId } = input;
@@ -211,9 +286,14 @@ export async function handleAnswer(
   };
 }
 
-export async function handleComplete(authResult: AuthResult): Promise<HandlerResult<CompleteResponse>> {
+export async function handleComplete(
+  authResult: AuthResult,
+  reqBody: unknown = null,
+): Promise<HandlerResult<CompleteResponse>> {
   const init = authResult.init;
-  const guest = findGuest(init.user.id, init.user.username);
+  const guest =
+    maybeViewAsGuest(init, extractViewAs(reqBody)) ??
+    findGuest(init.user.id, init.user.username);
   if (!guest) return { ok: false, status: 403, body: { error: "not in guest list" } };
   const user = await getUser(init.user.id);
   if (!user) return { ok: false, status: 409, body: { error: "user not initialised" } };

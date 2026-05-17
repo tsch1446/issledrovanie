@@ -9,14 +9,28 @@ function getInitData(): string {
   return tg?.initData ?? "";
 }
 
+function getViewAs(): string | null {
+  try {
+    const search =
+      typeof window !== "undefined" && window.location ? window.location.search : "";
+    const p = new URLSearchParams(search);
+    const v = p.get("as");
+    return v && v.length > 0 ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 async function call<T>(path: string, body: Record<string, unknown> = {}): Promise<T> {
+  const viewAs = getViewAs();
+  const payload = viewAs ? { ...body, viewAs } : body;
   const res = await fetch(path, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `tma ${getInitData()}`,
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify(payload),
   });
   if (!res.ok) {
     let detail = "";

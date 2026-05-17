@@ -1,4 +1,4 @@
-import { Context, Telegraf } from "telegraf";
+import { Context, Markup, Telegraf } from "telegraf";
 import {
   computeGeneralStats,
   computeInsights,
@@ -326,6 +326,27 @@ export function registerAdminCommands(bot: Telegraf): void {
       }
       await clearAllTables();
       await ctx.reply("База очищена.");
+    }),
+  );
+
+  bot.command(
+    "test",
+    adminOnly(async (ctx) => {
+      await logAdminCommand(ctx, "test", []);
+      const base = config.publicUrl;
+      if (!base) {
+        await ctx.reply("PUBLIC_URL не настроен.");
+        return;
+      }
+      await ctx.reply(
+        "Выбери, под какую группу примерить:",
+        Markup.inlineKeyboard([
+          [Markup.button.webApp("Покер (29)", `${base}/?as=poker`)],
+          [Markup.button.webApp("Футбол (30)", `${base}/?as=football`)],
+          [Markup.button.webApp("Футбол + вс (30-31)", `${base}/?as=football_ext`)],
+          [Markup.button.webApp("Все три дня (29-31)", `${base}/?as=all`)],
+        ]),
+      );
     }),
   );
 

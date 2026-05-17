@@ -7,7 +7,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   const a = auth(req, res);
   if (!a) return;
   try {
-    const body = await handleState(a);
+    const body = await handleState(a, req.body);
     res.status(200).json(body);
   } catch (err) {
     res.status(500).json({ error: (err as Error).message });
