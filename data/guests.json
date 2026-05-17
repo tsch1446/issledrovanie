@@ -1,37 +1,109 @@
 [
   {
     "telegramId": 299959249,
+    "username": "tsch1446",
     "name": "Сергей",
     "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
     "group": "admin",
-    "notes": "Тестовый прогон админом"
+    "notes": "Именинник"
   },
+
   {
-    "telegramId": 111111111,
-    "name": "Даня",
-    "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
-    "group": "boys",
-    "notes": "Все три дня. Покер + футбол + баня."
-  },
-  {
-    "telegramId": 222222222,
-    "name": "Леша",
-    "days": ["2026-05-30"],
-    "group": "boys",
-    "notes": "Только футбольный день."
-  },
-  {
-    "telegramId": 333333333,
-    "name": "Миша",
+    "username": "maskon_fuckit",
+    "name": "Maskon",
     "days": ["2026-05-29"],
-    "group": "boys",
-    "notes": "Только покер."
+    "group": "poker"
   },
   {
-    "telegramId": 444444444,
-    "name": "Костя",
-    "days": ["2026-05-30", "2026-05-31"],
-    "group": "boys",
-    "notes": "Футбол и афтерпати."
+    "username": "levski1301",
+    "name": "Levski",
+    "days": ["2026-05-29"],
+    "group": "poker"
+  },
+  {
+    "username": "oda_mclovin",
+    "name": "Oda",
+    "days": ["2026-05-29"],
+    "group": "poker"
+  },
+  {
+    "username": "wen0tequal",
+    "name": "Wen",
+    "days": ["2026-05-29"],
+    "group": "poker"
+  },
+
+  {
+    "username": "densoboldr",
+    "name": "Denis",
+    "days": ["2026-05-30"],
+    "group": "football"
+  },
+  {
+    "username": "max_selevich",
+    "name": "Max",
+    "days": ["2026-05-30"],
+    "group": "football"
+  },
+  {
+    "username": "j0rdanwhy",
+    "name": "Jordan",
+    "days": ["2026-05-30"],
+    "group": "football"
+  },
+
+  {
+    "username": "pavel_norik",
+    "name": "Pavel",
+    "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
+    "group": "all"
+  },
+  {
+    "username": "r_liubanevich",
+    "name": "Roma",
+    "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
+    "group": "all"
+  },
+  {
+    "username": "jgsss1",
+    "name": "JG",
+    "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
+    "group": "all"
+  },
+  {
+    "username": "knotai_99",
+    "name": "Knotai",
+    "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
+    "group": "all"
+  },
+  {
+    "username": "pushkin488",
+    "name": "Pushkin",
+    "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
+    "group": "all"
+  },
+  {
+    "username": "nikijumbo",
+    "name": "Niki",
+    "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
+    "group": "all"
+  },
+  {
+    "username": "reunytg",
+    "name": "Reun",
+    "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
+    "group": "all"
+  },
+  {
+    "username": "ceeaceede",
+    "name": "Cee",
+    "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
+    "group": "all"
+  },
+  {
+    "username": "shvi_pa",
+    "name": "Shvi",
+    "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
+    "group": "all"
   }
 ]
