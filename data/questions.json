@@ -236,7 +236,7 @@
         "analyticsLabel": "Любят играть в футбол",
         "reaction": {
           "text": "Записал в основу.",
-          "image": "assets/reactions/q_football.jpg"
+          "image": "assets/reactions/q_football.png"
         }
       },
       {
@@ -245,7 +245,7 @@
         "analyticsLabel": "Не любят играть в футбол",
         "reaction": {
           "text": "Скамейка запасных тебя уже ждет.",
-          "image": "assets/reactions/q_football.jpg"
+          "image": "assets/reactions/q_football.png"
         }
       }
     ],
