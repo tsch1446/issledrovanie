@@ -42,7 +42,7 @@ function readConfig(): AppConfig {
     throw new Error("TURSO_AUTH_TOKEN is required for libsql:// URLs");
   }
 
-  const publicUrl = (process.env.PUBLIC_URL ?? "").replace(/\/$/, "");
+  const publicUrl = (process.env.PUBLIC_URL ?? "").trim().replace(/\/$/, "");
   const webhookSecret = (process.env.TELEGRAM_WEBHOOK_SECRET ?? "").trim();
 
   const rootDir = path.resolve(__dirname, "..");
