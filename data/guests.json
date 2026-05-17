@@ -32,6 +32,12 @@
     "days": ["2026-05-29"],
     "group": "poker"
   },
+  {
+    "username": "shvi_pa",
+    "name": "Вовчик",
+    "days": ["2026-05-29"],
+    "group": "poker"
+  },
 
   {
     "username": "densoboldr",
@@ -97,12 +103,6 @@
   {
     "username": "ceeaceede",
     "name": "Семыч",
-    "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
-    "group": "all"
-  },
-  {
-    "username": "shvi_pa",
-    "name": "Вовчик",
     "days": ["2026-05-29", "2026-05-30", "2026-05-31"],
     "group": "all"
   },
