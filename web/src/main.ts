@@ -147,6 +147,31 @@ function showError(message: string): void {
   });
 }
 
+function showWelcome(ready: StateReady): void {
+  renderScreen(
+    "welcome",
+    `<div class="card">
+       <p class="kicker">Исследрование</p>
+       <h1 class="title">Привет, ${escapeHtml(ready.name)}.</h1>
+       <p class="body">Есть 3 минуты? Это небольшое исследрование. ${ready.total} коротких вопросов. Отвечай честно.</p>
+       <div class="actions">
+         <button class="btn" id="start-btn">Начать</button>
+       </div>
+     </div>`,
+  );
+  const btn = document.getElementById("start-btn") as HTMLButtonElement | null;
+  btn?.addEventListener("click", async () => {
+    haptic("medium");
+    btn.disabled = true;
+    try {
+      await notifyStart();
+      showQuestion();
+    } catch (err) {
+      showError((err as Error).message);
+    }
+  });
+}
+
 function currentQuestion(): PublicQuestion | null {
   const r = state.ready;
   if (!r) return null;
@@ -336,12 +361,9 @@ async function bootstrap(): Promise<void> {
       void completeFlow();
       return;
     }
-    // Skip the welcome screen: go straight into the first question.
-    // notifyStart() records startedAt on the server but doesn't block UI.
     if (data.currentIndex === 0) {
-      void notifyStart().catch(() => {
-        // non-critical; quiz can proceed even if /start fails
-      });
+      showWelcome(data);
+      return;
     }
     showQuestion();
   } catch (err) {

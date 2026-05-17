@@ -154,7 +154,7 @@
   {
     "id": "q_football",
     "audience": ["football"],
-    "text": "Ты любишь играть в футбол?",
+    "text": "Ты будешь играть в футбол?",
     "options": [
       {
         "id": "yes",
@@ -243,6 +243,25 @@
         "label": "ПСЖ",
         "analyticsLabel": "Верят в ПСЖ",
         "reaction": { "text": "Принято. Посмотрим в субботу." }
+      }
+    ]
+  },
+  {
+    "id": "q_kuralesit",
+    "audience": ["football"],
+    "text": "Готов куралесить после финала?",
+    "options": [
+      {
+        "id": "yes",
+        "label": "Да",
+        "analyticsLabel": "Готовы куралесить",
+        "reaction": { "text": "Зафиксировано. Уже готовлю маршрут." }
+      },
+      {
+        "id": "no",
+        "label": "Нет",
+        "analyticsLabel": "Не готовы куралесить",
+        "reaction": { "text": "Принято. Но мы тебя уговорим." }
       }
     ]
   }
