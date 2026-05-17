@@ -63,7 +63,7 @@ function bothFinal(c: Cohorts): string {
 
 export function buildFinalContent(name: string, days: string[]): FinalContent {
   const cohorts = deriveCohorts(days);
-  const title = `Исследование завершено, ${name}.`;
+  const title = `Исследрование завершено, ${name}.`;
 
   if (cohorts.hasPoker && cohorts.hasFootball) {
     return { title, body: bothFinal(cohorts) };
@@ -83,15 +83,15 @@ export function buildFinalText(name: string, days: string[]): string {
 }
 
 export function formatGreeting(name: string): string {
-  return `Привет, ${name}.\nЕсть 3 минуты? Это небольшое исследование.\nОтвечай честно.`;
+  return `Привет, ${name}.\nЕсть 3 минуты? Это небольшое исследрование.\nОтвечай честно.`;
 }
 
 export function formatUnknownUser(telegramId: number): string {
-  return `Похоже, тебя нет в списке исследования.\nТвой Telegram ID: ${telegramId}.\nСкинь его Сергею.`;
+  return `Похоже, тебя нет в списке исследрования.\nТвой Telegram ID: ${telegramId}.\nСкинь его Сергею.`;
 }
 
 export function formatAlreadyCompletedShort(): string {
-  return "Ты уже прошел исследование. Результаты зафиксированы.";
+  return "Ты уже прошел исследрование. Результаты зафиксированы.";
 }
 
 export function formatRestartBlocked(): string {

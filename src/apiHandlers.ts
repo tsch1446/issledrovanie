@@ -1,5 +1,6 @@
 import { extractInitDataFromHeader, validateInitData, ValidatedInitData } from "./auth";
 import { deriveCohorts, questionMatchesAudience } from "./cohorts";
+import { config } from "./config";
 import { getGuestById } from "./guests";
 import { buildFinalContent } from "./renderText";
 import { loadQuestions } from "./scenario";
@@ -9,6 +10,7 @@ import {
   logEvent,
   markCompleted,
   markStarted,
+  resetUserProgress,
   saveAnswer,
   setCurrentQuestionIndex,
 } from "./storage";
@@ -77,6 +79,10 @@ function buildFinalScreen(guest: Guest): FinalScreen {
   return { title: c.title, body: c.body, image: null };
 }
 
+function isAdminUser(telegramId: number): boolean {
+  return telegramId === config.adminTelegramId;
+}
+
 export async function handleState(authResult: AuthResult): Promise<StateResponse> {
   const init = authResult.init;
   const guest = getGuestById(init.user.id);
@@ -84,11 +90,22 @@ export async function handleState(authResult: AuthResult): Promise<StateResponse
     await logEvent(init.user.id, "miniapp_unknown_user");
     return { status: "unknown", telegramId: init.user.id };
   }
-  const user = await ensureUser(guest, {
+  let user = await ensureUser(guest, {
     username: init.user.username,
     firstName: init.user.firstName,
     lastName: init.user.lastName,
   });
+
+  // Admin can retake the quiz: if they already completed, wipe their progress
+  // on next /state so the next open starts a fresh run.
+  if (isAdminUser(init.user.id) && user.completed === 1) {
+    await resetUserProgress(init.user.id);
+    await logEvent(init.user.id, "admin_auto_replay");
+    log("admin_auto_replay", { telegramId: init.user.id });
+    const refreshed = await getUser(init.user.id);
+    if (refreshed) user = refreshed;
+  }
+
   const filtered = questionsForGuest(guest);
   const body: StateReady = {
     status: "ready",

@@ -96,7 +96,7 @@ function showLoading(): void {
     "loading",
     `<div class="card center">
        <div class="spinner"></div>
-       <p class="muted">Загружаем исследование</p>
+       <p class="muted">Загружаем исследрование</p>
      </div>`,
   );
 }
@@ -106,7 +106,7 @@ function showUnknown(telegramId: number): void {
     "unknown",
     `<div class="card">
        <p class="kicker">Доступ</p>
-       <h1 class="title">Тебя нет в списке исследования</h1>
+       <h1 class="title">Тебя нет в списке исследрования</h1>
        <p class="body">Это закрытый прогон. Если ты считаешь, что должен быть в списке - скинь Сергею свой Telegram ID.</p>
        <div class="error-block">
          <p class="muted">Твой Telegram ID:</p>
@@ -144,31 +144,6 @@ function showError(message: string): void {
   const btn = document.getElementById("retry-btn") as HTMLButtonElement | null;
   btn?.addEventListener("click", () => {
     void bootstrap();
-  });
-}
-
-function showWelcome(ready: StateReady): void {
-  renderScreen(
-    "welcome",
-    `<div class="card">
-       <p class="kicker">Исследование</p>
-       <h1 class="title">Привет, ${escapeHtml(ready.name)}.</h1>
-       <p class="body">Есть 3 минуты? Это небольшое исследование. ${ready.total} коротких вопросов. Отвечай честно.</p>
-       <div class="actions">
-         <button class="btn" id="start-btn">Начать</button>
-       </div>
-     </div>`,
-  );
-  const btn = document.getElementById("start-btn") as HTMLButtonElement | null;
-  btn?.addEventListener("click", async () => {
-    haptic("medium");
-    btn.disabled = true;
-    try {
-      await notifyStart();
-      showQuestion();
-    } catch (err) {
-      showError((err as Error).message);
-    }
   });
 }
 
@@ -298,7 +273,7 @@ function showFinal(final: FinalScreen): void {
   renderScreen(
     "final",
     `<div class="card">
-       <p class="kicker">Исследование завершено</p>
+       <p class="kicker">Исследрование завершено</p>
        ${imageTag(final.image)}
        <h1 class="final-title">${escapeHtml(final.title)}</h1>
        <p class="final-body">${escapeHtml(final.body)}</p>
@@ -357,15 +332,18 @@ async function bootstrap(): Promise<void> {
       showFinal(data.final);
       return;
     }
-    if (data.currentIndex > 0 && data.currentIndex < data.total) {
-      showQuestion();
-      return;
-    }
-    if (data.currentIndex >= data.total) {
+    if (data.currentIndex >= data.total && data.total > 0) {
       void completeFlow();
       return;
     }
-    showWelcome(data);
+    // Skip the welcome screen: go straight into the first question.
+    // notifyStart() records startedAt on the server but doesn't block UI.
+    if (data.currentIndex === 0) {
+      void notifyStart().catch(() => {
+        // non-critical; quiz can proceed even if /start fails
+      });
+    }
+    showQuestion();
   } catch (err) {
     showError((err as Error).message);
   }

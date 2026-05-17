@@ -35,7 +35,7 @@ async function sendOpenAppMessage(ctx: Context, name: string): Promise<void> {
     await ctx.reply("Mini App не настроен: PUBLIC_URL пуст. Скажи Сергею.");
     return;
   }
-  await ctx.reply(formatGreeting(name), webAppKeyboard("Открыть исследование"));
+  await ctx.reply(formatGreeting(name), webAppKeyboard("Открыть исследрование"));
 }
 
 async function handleStart(ctx: Context): Promise<void> {
