@@ -22,7 +22,8 @@ export interface Question {
 }
 
 export interface Guest {
-  telegramId: number;
+  telegramId?: number;
+  username?: string;
   name: string;
   days: string[];
   group?: string;

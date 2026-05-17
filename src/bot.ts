@@ -1,7 +1,7 @@
 import { Context, Markup, Telegraf } from "telegraf";
 import { registerAdminCommands } from "./adminCommands";
 import { config } from "./config";
-import { getGuestById } from "./guests";
+import { findGuest } from "./guests";
 import {
   formatAlreadyCompletedShort,
   formatGreeting,
@@ -42,14 +42,14 @@ async function handleStart(ctx: Context): Promise<void> {
   const telegramId = getTelegramId(ctx);
   if (telegramId === null) return;
 
-  const guest = getGuestById(telegramId);
+  const guest = findGuest(telegramId, ctx.from?.username ?? null);
   if (!guest) {
     await logEvent(telegramId, "unknown_user_start");
     await ctx.reply(formatUnknownUser(telegramId));
     return;
   }
 
-  await ensureUser(guest, {
+  await ensureUser(telegramId, guest, {
     username: ctx.from?.username ?? null,
     firstName: ctx.from?.first_name ?? null,
     lastName: ctx.from?.last_name ?? null,

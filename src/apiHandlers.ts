@@ -1,7 +1,7 @@
 import { extractInitDataFromHeader, validateInitData, ValidatedInitData } from "./auth";
 import { deriveCohorts, questionMatchesAudience } from "./cohorts";
 import { config } from "./config";
-import { getGuestById } from "./guests";
+import { findGuest } from "./guests";
 import { buildFinalContent } from "./renderText";
 import { loadQuestions } from "./scenario";
 import {
@@ -92,12 +92,12 @@ function isAdminUser(telegramId: number): boolean {
 
 export async function handleState(authResult: AuthResult): Promise<StateResponse> {
   const init = authResult.init;
-  const guest = getGuestById(init.user.id);
+  const guest = findGuest(init.user.id, init.user.username);
   if (!guest) {
     await logEvent(init.user.id, "miniapp_unknown_user");
     return { status: "unknown", telegramId: init.user.id };
   }
-  let user = await ensureUser(guest, {
+  let user = await ensureUser(init.user.id, guest, {
     username: init.user.username,
     firstName: init.user.firstName,
     lastName: init.user.lastName,
@@ -132,9 +132,9 @@ export type HandlerResult<T> =
 
 export async function handleStart(authResult: AuthResult): Promise<HandlerResult<{ ok: true }>> {
   const init = authResult.init;
-  const guest = getGuestById(init.user.id);
+  const guest = findGuest(init.user.id, init.user.username);
   if (!guest) return { ok: false, status: 403, body: { error: "not in guest list" } };
-  const user = await ensureUser(guest, {
+  const user = await ensureUser(init.user.id, guest, {
     username: init.user.username,
     firstName: init.user.firstName,
     lastName: init.user.lastName,
@@ -157,7 +157,7 @@ export async function handleAnswer(
   input: AnswerInput,
 ): Promise<HandlerResult<AnswerResponse>> {
   const init = authResult.init;
-  const guest = getGuestById(init.user.id);
+  const guest = findGuest(init.user.id, init.user.username);
   if (!guest) return { ok: false, status: 403, body: { error: "not in guest list" } };
 
   const { questionId, optionId } = input;
@@ -213,7 +213,7 @@ export async function handleAnswer(
 
 export async function handleComplete(authResult: AuthResult): Promise<HandlerResult<CompleteResponse>> {
   const init = authResult.init;
-  const guest = getGuestById(init.user.id);
+  const guest = findGuest(init.user.id, init.user.username);
   if (!guest) return { ok: false, status: 403, body: { error: "not in guest list" } };
   const user = await getUser(init.user.id);
   if (!user) return { ok: false, status: 409, body: { error: "user not initialised" } };

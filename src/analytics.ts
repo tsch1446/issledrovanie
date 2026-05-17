@@ -176,7 +176,7 @@ export async function computeInsights(): Promise<InsightLine[]> {
 }
 
 export interface PendingLists {
-  notStarted: Array<{ telegramId: number; name: string; username: string | null }>;
+  notStarted: Array<{ telegramId: number | null; name: string; username: string | null }>;
   notCompleted: Array<{
     telegramId: number;
     name: string;
@@ -187,23 +187,34 @@ export interface PendingLists {
 
 export async function computePending(): Promise<PendingLists> {
   const guests = loadGuests();
-  const users = new Map<number, UserRow>();
-  for (const u of await getAllUsers()) users.set(u.telegramId, u);
+  const usersById = new Map<number, UserRow>();
+  const usersByUsername = new Map<string, UserRow>();
+  for (const u of await getAllUsers()) {
+    usersById.set(u.telegramId, u);
+    if (u.username) usersByUsername.set(u.username.toLowerCase(), u);
+  }
 
   const notStarted: PendingLists["notStarted"] = [];
   const notCompleted: PendingLists["notCompleted"] = [];
 
   for (const g of guests) {
-    const u = users.get(g.telegramId);
+    let u: UserRow | undefined;
+    if (g.telegramId !== undefined) u = usersById.get(g.telegramId);
+    if (!u && g.username) u = usersByUsername.get(g.username);
+
     if (!u || u.startedAt === null) {
-      notStarted.push({ telegramId: g.telegramId, name: g.name, username: u?.username ?? null });
+      notStarted.push({
+        telegramId: g.telegramId ?? u?.telegramId ?? null,
+        name: g.name,
+        username: g.username ?? u?.username ?? null,
+      });
       continue;
     }
     if (u.completed !== 1) {
       notCompleted.push({
-        telegramId: g.telegramId,
+        telegramId: u.telegramId,
         name: g.name,
-        username: u.username ?? null,
+        username: g.username ?? u.username ?? null,
         currentQuestionIndex: u.currentQuestionIndex,
       });
     }

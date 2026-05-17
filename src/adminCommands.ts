@@ -11,8 +11,15 @@ import { config } from "./config";
 import { buildAnswersCsv, buildSummaryCsv } from "./csv";
 import { clearAllTables } from "./db";
 import { getGuestById, loadGuests } from "./guests";
+import { Guest } from "./types";
 import { buildFinalText, formatNotAdmin } from "./renderText";
-import { ensureUser, getUser, logEvent, resetUserProgress } from "./storage";
+import {
+  ensureUser,
+  getUser,
+  getUserByUsername,
+  logEvent,
+  resetUserProgress,
+} from "./storage";
 import { isAdmin, log } from "./utils";
 
 function adminOnly(handler: (ctx: Context) => Promise<void>) {
@@ -41,6 +48,41 @@ async function logAdminCommand(ctx: Context, command: string, args: string[]): P
   const fromId = ctx.from?.id ?? null;
   log("admin_command_used", { command, fromId, args });
   await logEvent(fromId, "admin_command", { command, args });
+}
+
+interface ResolvedTarget {
+  guest: Guest | null;
+  telegramId: number | null;
+  raw: string;
+}
+
+/**
+ * Resolve an admin command argument into a target user.
+ * Accepts a numeric telegramId or @username (with or without the @).
+ * Falls back to the DB users table when the guest entry has no telegramId.
+ */
+async function resolveTarget(raw: string | undefined): Promise<ResolvedTarget> {
+  const arg = (raw ?? "").trim();
+  if (!arg) return { guest: null, telegramId: null, raw: "" };
+
+  // numeric id?
+  const asNumber = Number(arg);
+  if (Number.isFinite(asNumber) && Number.isInteger(asNumber) && asNumber > 0) {
+    return { guest: getGuestById(asNumber), telegramId: asNumber, raw: arg };
+  }
+
+  // treat as username
+  const username = arg.replace(/^@+/, "").trim().toLowerCase();
+  if (!username) return { guest: null, telegramId: null, raw: arg };
+
+  const guest = loadGuests().find((g) => g.username === username) ?? null;
+  let telegramId: number | null = guest?.telegramId ?? null;
+  if (telegramId === null) {
+    // user may have opened the app already - their row carries the real id
+    const u = await getUserByUsername(username);
+    telegramId = u?.telegramId ?? null;
+  }
+  return { guest, telegramId, raw: arg };
 }
 
 export function registerAdminCommands(bot: Telegraf): void {
@@ -139,26 +181,20 @@ export function registerAdminCommands(bot: Telegraf): void {
       const p = await computePending();
       const fmt = (
         label: string,
-        list: Array<{ telegramId: number; name: string; username: string | null }>,
+        list: Array<{ telegramId: number | null; name: string; username: string | null }>,
       ) => {
         if (list.length === 0) return `${label}: никого`;
         const lines = list.map((u) => {
           const un = u.username ? `@${u.username}` : "";
-          return `- ${u.name} ${un} [${u.telegramId}]`.trim();
+          const id = u.telegramId !== null ? `[${u.telegramId}]` : "";
+          return `- ${u.name} ${[un, id].filter(Boolean).join(" ")}`.trim();
         });
         return `${label} (${list.length}):\n${lines.join("\n")}`;
       };
       const out = [
         fmt("Не начали", p.notStarted),
         "",
-        fmt(
-          "Начали, но не завершили",
-          p.notCompleted.map((u) => ({
-            telegramId: u.telegramId,
-            name: u.name,
-            username: u.username,
-          })),
-        ),
+        fmt("Начали, но не завершили", p.notCompleted),
       ].join("\n");
       await ctx.reply(out);
     }),
@@ -169,12 +205,18 @@ export function registerAdminCommands(bot: Telegraf): void {
     adminOnly(async (ctx) => {
       const args = getArgs(ctx);
       await logAdminCommand(ctx, "user_status", args);
-      const idRaw = args[0];
-      const id = Number(idRaw);
-      if (!Number.isFinite(id) || !Number.isInteger(id) || id <= 0) {
-        await ctx.reply("Использование: /user_status <telegramId>");
+      const target = await resolveTarget(args[0]);
+      if (!target.raw) {
+        await ctx.reply("Использование: /user_status <telegramId | @username>");
         return;
       }
+      if (target.telegramId === null) {
+        await ctx.reply(
+          `Не получилось определить Telegram ID для "${target.raw}". Возможно, пользователь ещё не открывал Mini App.`,
+        );
+        return;
+      }
+      const id = target.telegramId;
       const report = await computeUserStatus(id);
       const lines = [
         `Имя: ${report.guestName ?? "(нет в guests.json)"}`,
@@ -228,19 +270,18 @@ export function registerAdminCommands(bot: Telegraf): void {
     adminOnly(async (ctx) => {
       const args = getArgs(ctx);
       await logAdminCommand(ctx, "preview_final", args);
-      const idRaw = args[0];
-      const id = Number(idRaw);
-      if (!Number.isFinite(id) || !Number.isInteger(id) || id <= 0) {
-        await ctx.reply("Использование: /preview_final <telegramId>");
+      const target = await resolveTarget(args[0]);
+      if (!target.raw) {
+        await ctx.reply("Использование: /preview_final <telegramId | @username>");
         return;
       }
-      const guest = getGuestById(id);
-      if (!guest) {
-        await ctx.reply(`Гость с ID ${id} не найден в guests.json`);
+      if (!target.guest) {
+        await ctx.reply(`Гость "${target.raw}" не найден в guests.json`);
         return;
       }
-      const text = buildFinalText(guest.name, guest.days);
-      await ctx.reply(`Финальный экран для ${guest.name} (${id}):\n\n${text}`);
+      const text = buildFinalText(target.guest.name, target.guest.days);
+      const idLabel = target.telegramId ?? target.guest.username;
+      await ctx.reply(`Финальный экран для ${target.guest.name} (${idLabel}):\n\n${text}`);
     }),
   );
 
@@ -249,16 +290,21 @@ export function registerAdminCommands(bot: Telegraf): void {
     adminOnly(async (ctx) => {
       const args = getArgs(ctx);
       await logAdminCommand(ctx, "admin_reset", args);
-      const idRaw = args[0];
-      const id = Number(idRaw);
-      if (!Number.isFinite(id) || !Number.isInteger(id) || id <= 0) {
-        await ctx.reply("Использование: /admin_reset <telegramId>");
+      const target = await resolveTarget(args[0]);
+      if (!target.raw) {
+        await ctx.reply("Использование: /admin_reset <telegramId | @username>");
         return;
       }
-      const guest = getGuestById(id);
+      if (target.telegramId === null) {
+        await ctx.reply(
+          `Не получилось определить Telegram ID для "${target.raw}". Возможно, пользователь ещё не открывал Mini App.`,
+        );
+        return;
+      }
+      const id = target.telegramId;
       const existing = await getUser(id);
-      if (guest && !existing) {
-        await ensureUser(guest, {});
+      if (target.guest && !existing) {
+        await ensureUser(id, target.guest, {});
       }
       const ok = await resetUserProgress(id);
       if (!ok) {
@@ -288,9 +334,12 @@ export function registerAdminCommands(bot: Telegraf): void {
     adminOnly(async (ctx) => {
       await logAdminCommand(ctx, "guests", []);
       const list = loadGuests();
-      const lines = list.map(
-        (g) => `- ${g.name} [${g.telegramId}] ${g.group ?? "-"} ${g.days.join(",")}`,
-      );
+      const lines = list.map((g) => {
+        const handle = g.username ? `@${g.username}` : "";
+        const id = g.telegramId !== undefined ? `[${g.telegramId}]` : "";
+        const label = [handle, id].filter(Boolean).join(" ") || "(нет id)";
+        return `- ${g.name} ${label} ${g.group ?? "-"} ${g.days.join(",")}`;
+      });
       await ctx.reply(`Гости (${list.length}):\n${lines.join("\n")}`);
     }),
   );

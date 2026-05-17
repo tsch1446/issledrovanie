@@ -40,15 +40,31 @@ export async function getUser(telegramId: number): Promise<UserRow | null> {
   return rowToUser(res.rows[0]);
 }
 
+export async function getUserByUsername(username: string): Promise<UserRow | null> {
+  const u = username.replace(/^@+/, "").trim().toLowerCase();
+  if (!u) return null;
+  const db = await ensureSchema();
+  const res = await db.execute({
+    sql: `SELECT * FROM users WHERE LOWER(username) = ?`,
+    args: [u],
+  });
+  if (res.rows.length === 0) return null;
+  return rowToUser(res.rows[0]);
+}
+
 export interface TelegramProfile {
   username?: string | null;
   firstName?: string | null;
   lastName?: string | null;
 }
 
-export async function ensureUser(guest: Guest, tg: TelegramProfile): Promise<UserRow> {
+export async function ensureUser(
+  telegramId: number,
+  guest: Guest,
+  tg: TelegramProfile,
+): Promise<UserRow> {
   const db = await ensureSchema();
-  const existing = await getUser(guest.telegramId);
+  const existing = await getUser(telegramId);
   if (existing) {
     await db.execute({
       sql: `UPDATE users
@@ -64,10 +80,10 @@ export async function ensureUser(guest: Guest, tg: TelegramProfile): Promise<Use
         tg.lastName ?? null,
         guest.group ?? null,
         JSON.stringify(guest.days),
-        guest.telegramId,
+        telegramId,
       ],
     });
-    const refreshed = await getUser(guest.telegramId);
+    const refreshed = await getUser(telegramId);
     if (!refreshed) throw new Error("User vanished after upsert");
     return refreshed;
   }
@@ -76,7 +92,7 @@ export async function ensureUser(guest: Guest, tg: TelegramProfile): Promise<Use
     sql: `INSERT INTO users (telegramId, username, firstName, lastName, startedAt, completedAt, completed, currentQuestionIndex, groupName, assignedDays, finalVariant)
           VALUES (?, ?, ?, ?, NULL, NULL, 0, 0, ?, ?, NULL)`,
     args: [
-      guest.telegramId,
+      telegramId,
       tg.username ?? null,
       tg.firstName ?? null,
       tg.lastName ?? null,
@@ -84,7 +100,7 @@ export async function ensureUser(guest: Guest, tg: TelegramProfile): Promise<Use
       JSON.stringify(guest.days),
     ],
   });
-  const created = await getUser(guest.telegramId);
+  const created = await getUser(telegramId);
   if (!created) throw new Error("Failed to create user");
   return created;
 }
