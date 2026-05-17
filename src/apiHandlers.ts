@@ -30,8 +30,7 @@ import { log } from "./utils";
 // so the admin can step through what each cohort actually sees.
 const VIEW_AS_DAYS: Record<string, string[]> = {
   poker: ["2026-05-29"],
-  football: ["2026-05-30"],
-  football_ext: ["2026-05-30", "2026-05-31"],
+  football: ["2026-05-30", "2026-05-31"],
   all: ["2026-05-29", "2026-05-30", "2026-05-31"],
 };
 
@@ -48,16 +47,14 @@ function maybeViewAsGuest(
   const key = viewAsRaw.toLowerCase();
   const days = VIEW_AS_DAYS[key];
   if (!days) return null;
-  const labels: Record<string, string> = {
-    poker: "Покер-вью",
-    football: "Футбол-вью",
-    football_ext: "Футбол+вс-вью",
-    all: "Все-3-вью",
-  };
+  // Use the admin's real name from guests.json so the welcome screen
+  // reads naturally ("Привет, Сергей.") instead of a "view-as" label.
+  const real = findGuest(init.user.id, init.user.username);
+  const displayName = real?.name ?? init.user.firstName ?? "Тест";
   return {
     telegramId: init.user.id,
     username: init.user.username ?? undefined,
-    name: labels[key] ?? "Тест",
+    name: displayName,
     days,
     group: "test",
     notes: `View-as: ${key}`,

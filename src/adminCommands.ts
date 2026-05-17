@@ -341,10 +341,9 @@ export function registerAdminCommands(bot: Telegraf): void {
       await ctx.reply(
         "Выбери, под какую группу примерить:",
         Markup.inlineKeyboard([
-          [Markup.button.webApp("Покер (29)", `${base}/?as=poker`)],
-          [Markup.button.webApp("Футбол (30)", `${base}/?as=football`)],
-          [Markup.button.webApp("Футбол + вс (30-31)", `${base}/?as=football_ext`)],
-          [Markup.button.webApp("Все три дня (29-31)", `${base}/?as=all`)],
+          [Markup.button.webApp("Покер", `${base}/?as=poker`)],
+          [Markup.button.webApp("Футбол", `${base}/?as=football`)],
+          [Markup.button.webApp("Все", `${base}/?as=all`)],
         ]),
       );
     }),
