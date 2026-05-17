@@ -14,10 +14,12 @@
   "dependencies": {
     "@libsql/client": "^0.17.3",
     "@vercel/node": "^5.8.2",
+    "canvas-confetti": "^1.9.4",
     "dotenv": "^16.4.5",
     "telegraf": "^4.16.3"
   },
   "devDependencies": {
+    "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^20.12.12",
     "esbuild": "^0.23.0",
     "ts-node-dev": "^2.0.0",

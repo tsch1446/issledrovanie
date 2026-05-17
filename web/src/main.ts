@@ -1,3 +1,4 @@
+import confetti from "canvas-confetti";
 import { getState, notifyStart, sendAnswer, sendComplete } from "./api";
 import type {
   FinalScreen,
@@ -51,15 +52,18 @@ function renderScreen(name: Screen, html: string): void {
   root.innerHTML = `<section id="screen-${name}" class="screen active">${html}</section>`;
 }
 
-function progressDots(total: number, current: number): string {
-  const dots: string[] = [];
-  for (let i = 0; i < total; i++) {
-    let cls = "progress-dot";
-    if (i < current) cls += " done";
-    else if (i === current) cls += " current";
-    dots.push(`<div class="${cls}"></div>`);
-  }
-  return `<div class="progress">${dots.join("")}</div>`;
+function progressBar(total: number, current: number): string {
+  if (total <= 0) return "";
+  const pct = Math.max(0, Math.min(100, Math.round((current / total) * 100)));
+  const shown = Math.min(current + 1, total);
+  return `
+    <div class="progress">
+      <div class="progress-track">
+        <div class="progress-fill" style="width:${pct}%"></div>
+      </div>
+      <div class="progress-count">${shown} / ${total}</div>
+    </div>
+  `;
 }
 
 function imageTag(src: string | null | undefined): string {
@@ -201,9 +205,8 @@ function showQuestion(): void {
 
   renderScreen(
     "question",
-    `${progressDots(ready.total, state.questionIndex)}
+    `${progressBar(ready.total, state.questionIndex)}
      <div class="card">
-       <p class="kicker">Вопрос ${state.questionIndex + 1} из ${ready.total}</p>
        ${imageTag(q.image)}
        <h2 class="subtitle">${escapeHtml(q.text)}</h2>
        <div class="actions">
@@ -271,9 +274,9 @@ function showReaction(): void {
 
   renderScreen(
     "reaction",
-    `${progressDots(ready.total, Math.min(state.questionIndex, ready.total - 1))}
+    `${progressBar(ready.total, Math.min(state.questionIndex, ready.total - 1))}
      <div class="card">
-       <p class="kicker">Зафиксировано</p>
+       <p class="kicker success">Зафиксировано</p>
        ${imageStackTag(reaction.images)}
        <p class="body">${escapeHtml(reaction.text)}</p>
        <div class="actions">
@@ -306,11 +309,47 @@ async function completeFlow(): Promise<void> {
   }
 }
 
+function fireConfetti(): void {
+  // Read the Telegram accent so confetti matches the user's theme.
+  const styles = getComputedStyle(document.documentElement);
+  const accent = styles.getPropertyValue("--accent").trim() || "#2f80ed";
+  const palette = [accent, "#ffb347", "#ffffff", "#34c759", "#ff5e57"];
+
+  const burst = (originX: number) => {
+    confetti({
+      particleCount: 70,
+      startVelocity: 45,
+      spread: 70,
+      ticks: 240,
+      origin: { x: originX, y: 0.25 },
+      colors: palette,
+      gravity: 1.1,
+      scalar: 0.95,
+      disableForReducedMotion: true,
+    });
+  };
+
+  burst(0.2);
+  window.setTimeout(() => burst(0.5), 180);
+  window.setTimeout(() => burst(0.8), 360);
+  window.setTimeout(() => {
+    confetti({
+      particleCount: 40,
+      angle: 90,
+      spread: 120,
+      origin: { x: 0.5, y: 0.0 },
+      colors: palette,
+      ticks: 200,
+      disableForReducedMotion: true,
+    });
+  }, 600);
+}
+
 function showFinal(final: FinalScreen): void {
   renderScreen(
     "final",
     `<div class="card">
-       <p class="kicker">Исследрование завершено</p>
+       <p class="kicker success">Исследрование завершено</p>
        ${imageTag(final.image)}
        <h1 class="final-title">${escapeHtml(final.title)}</h1>
        <p class="final-body">${escapeHtml(final.body)}</p>
@@ -319,6 +358,7 @@ function showFinal(final: FinalScreen): void {
        </div>
      </div>`,
   );
+  window.setTimeout(fireConfetti, 200);
   const btn = document.getElementById("done-btn") as HTMLButtonElement | null;
   btn?.addEventListener("click", () => {
     haptic("success");
