@@ -18,9 +18,9 @@ export interface GeneralStats {
   invited31: number;
 }
 
-export function computeGeneralStats(): GeneralStats {
+export async function computeGeneralStats(): Promise<GeneralStats> {
   const guests = loadGuests();
-  const users = getAllUsers();
+  const users = await getAllUsers();
 
   const started = users.filter((u) => u.startedAt !== null).length;
   const completed = users.filter((u) => u.completed === 1).length;
@@ -57,16 +57,17 @@ export interface QuestionAggregate {
   noPercent: number;
 }
 
-export function computeQuestionAggregates(): QuestionAggregate[] {
+export async function computeQuestionAggregates(): Promise<QuestionAggregate[]> {
   const questions = loadQuestions();
-  return questions.map((q) => {
-    const rows = getAnswersByQuestion(q.id);
+  const out: QuestionAggregate[] = [];
+  for (const q of questions) {
+    const rows = await getAnswersByQuestion(q.id);
     const yesCount = rows.filter((r) => r.answer === "yes").length;
     const noCount = rows.filter((r) => r.answer === "no").length;
     const total = yesCount + noCount;
     const yesPercent = total > 0 ? Math.round((yesCount / total) * 100) : 0;
     const noPercent = total > 0 ? 100 - yesPercent : 0;
-    return {
+    out.push({
       questionId: q.id,
       questionText: q.text,
       analyticsKey: q.analyticsKey,
@@ -77,8 +78,9 @@ export function computeQuestionAggregates(): QuestionAggregate[] {
       totalAnswers: total,
       yesPercent,
       noPercent,
-    };
-  });
+    });
+  }
+  return out;
 }
 
 export interface QuestionDetailEntry {
@@ -98,14 +100,14 @@ export interface QuestionDetail {
   no: QuestionDetailEntry[];
 }
 
-export function computeQuestionDetail(questionId: string): QuestionDetail | null {
+export async function computeQuestionDetail(questionId: string): Promise<QuestionDetail | null> {
   const questions = loadQuestions();
   const q = questions.find((x) => x.id === questionId);
   if (!q) return null;
 
-  const rows = getAnswersByQuestion(questionId);
+  const rows = await getAnswersByQuestion(questionId);
   const users = new Map<number, UserRow>();
-  for (const u of getAllUsers()) {
+  for (const u of await getAllUsers()) {
     users.set(u.telegramId, u);
   }
 
@@ -139,8 +141,8 @@ export interface InsightLine {
   count: number;
 }
 
-export function computeInsights(): InsightLine[] {
-  const aggregates = computeQuestionAggregates();
+export async function computeInsights(): Promise<InsightLine[]> {
+  const aggregates = await computeQuestionAggregates();
   const out: InsightLine[] = [];
   for (const a of aggregates) {
     out.push({ label: a.yesLabel, count: a.yesCount });
@@ -159,10 +161,10 @@ export interface PendingLists {
   }>;
 }
 
-export function computePending(): PendingLists {
+export async function computePending(): Promise<PendingLists> {
   const guests = loadGuests();
   const users = new Map<number, UserRow>();
-  for (const u of getAllUsers()) users.set(u.telegramId, u);
+  for (const u of await getAllUsers()) users.set(u.telegramId, u);
 
   const notStarted: PendingLists["notStarted"] = [];
   const notCompleted: PendingLists["notCompleted"] = [];
@@ -199,11 +201,11 @@ export interface UserStatusReport {
   }>;
 }
 
-export function computeUserStatus(telegramId: number): UserStatusReport {
+export async function computeUserStatus(telegramId: number): Promise<UserStatusReport> {
   const guest = loadGuests().find((g) => g.telegramId === telegramId) ?? null;
-  const userRow = getAllUsers().find((u) => u.telegramId === telegramId) ?? null;
+  const userRow = (await getAllUsers()).find((u) => u.telegramId === telegramId) ?? null;
   const questions = loadQuestions();
-  const answers = getAllAnswers().filter((a) => a.telegramId === telegramId);
+  const answers = (await getAllAnswers()).filter((a) => a.telegramId === telegramId);
   const answersMap = new Map<string, AnswerRow>();
   for (const a of answers) answersMap.set(a.questionId, a);
 

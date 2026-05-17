@@ -7,39 +7,43 @@ export interface AppConfig {
   botToken: string;
   adminTelegramId: number;
   nodeEnv: string;
-  port: number;
   publicUrl: string;
+  tursoUrl: string;
+  tursoAuthToken: string;
+  webhookSecret: string;
   rootDir: string;
   dataDir: string;
-  dbPath: string;
   questionsPath: string;
   guestsPath: string;
-  publicDir: string;
-  assetsDir: string;
 }
 
 function readConfig(): AppConfig {
   const botToken = process.env.BOT_TOKEN;
   if (!botToken || botToken.trim() === "") {
-    throw new Error("BOT_TOKEN is not set. Create .env from .env.example and put your bot token there.");
+    throw new Error("BOT_TOKEN is not set");
   }
 
   const adminRaw = process.env.ADMIN_TELEGRAM_ID;
   if (!adminRaw || adminRaw.trim() === "") {
-    throw new Error("ADMIN_TELEGRAM_ID is not set. Put your numeric Telegram ID in .env.");
+    throw new Error("ADMIN_TELEGRAM_ID is not set");
   }
   const adminTelegramId = Number(adminRaw);
   if (!Number.isFinite(adminTelegramId) || !Number.isInteger(adminTelegramId) || adminTelegramId <= 0) {
     throw new Error(`ADMIN_TELEGRAM_ID must be a positive integer, got: ${adminRaw}`);
   }
 
-  const portRaw = process.env.PORT ?? "3000";
-  const port = Number(portRaw);
-  if (!Number.isFinite(port) || port <= 0) {
-    throw new Error(`PORT must be a positive integer, got: ${portRaw}`);
+  const tursoUrl = (process.env.TURSO_DATABASE_URL ?? "").trim();
+  if (!tursoUrl) {
+    throw new Error("TURSO_DATABASE_URL is not set (e.g. libsql://your-db.turso.io)");
+  }
+
+  const tursoAuthToken = (process.env.TURSO_AUTH_TOKEN ?? "").trim();
+  if (tursoUrl.startsWith("libsql://") && !tursoAuthToken) {
+    throw new Error("TURSO_AUTH_TOKEN is required for libsql:// URLs");
   }
 
   const publicUrl = (process.env.PUBLIC_URL ?? "").replace(/\/$/, "");
+  const webhookSecret = (process.env.TELEGRAM_WEBHOOK_SECRET ?? "").trim();
 
   const rootDir = path.resolve(__dirname, "..");
   const dataDir = path.join(rootDir, "data");
@@ -48,15 +52,14 @@ function readConfig(): AppConfig {
     botToken,
     adminTelegramId,
     nodeEnv: process.env.NODE_ENV ?? "development",
-    port,
     publicUrl,
+    tursoUrl,
+    tursoAuthToken,
+    webhookSecret,
     rootDir,
     dataDir,
-    dbPath: path.join(dataDir, "bot.sqlite"),
     questionsPath: path.join(dataDir, "questions.json"),
     guestsPath: path.join(dataDir, "guests.json"),
-    publicDir: path.join(rootDir, "public"),
-    assetsDir: path.join(rootDir, "assets"),
   };
 }
 

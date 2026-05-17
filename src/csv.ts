@@ -20,7 +20,7 @@ function rowsToCsv(header: string[], rows: Array<Array<unknown>>): string {
   return out.join("\n");
 }
 
-export function buildAnswersCsv(): string {
+export async function buildAnswersCsv(): Promise<string> {
   const header = [
     "telegramId",
     "username",
@@ -36,14 +36,14 @@ export function buildAnswersCsv(): string {
     "groupName",
   ];
 
-  const users = new Map<number, ReturnType<typeof getAllUsers>[number]>();
-  for (const u of getAllUsers()) users.set(u.telegramId, u);
+  const users = new Map<number, Awaited<ReturnType<typeof getAllUsers>>[number]>();
+  for (const u of await getAllUsers()) users.set(u.telegramId, u);
 
   const questions = new Map<string, ReturnType<typeof loadQuestions>[number]>();
   for (const q of loadQuestions()) questions.set(q.id, q);
 
   const rows: Array<Array<unknown>> = [];
-  for (const a of getAllAnswers()) {
+  for (const a of await getAllAnswers()) {
     const u = users.get(a.telegramId);
     const q = questions.get(a.questionId);
     const label = q ? (a.answer === "yes" ? q.yesLabel : q.noLabel) : "";
@@ -66,7 +66,7 @@ export function buildAnswersCsv(): string {
   return rowsToCsv(header, rows);
 }
 
-export function buildSummaryCsv(): string {
+export async function buildSummaryCsv(): Promise<string> {
   const header = [
     "questionId",
     "questionText",
@@ -80,7 +80,7 @@ export function buildSummaryCsv(): string {
     "noPercent",
   ];
 
-  const aggregates = computeQuestionAggregates();
+  const aggregates = await computeQuestionAggregates();
   const rows = aggregates.map((a) => [
     a.questionId,
     a.questionText,

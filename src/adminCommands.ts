@@ -12,12 +12,7 @@ import { buildAnswersCsv, buildSummaryCsv } from "./csv";
 import { clearAllTables } from "./db";
 import { getGuestById, loadGuests } from "./guests";
 import { buildFinalText, formatNotAdmin } from "./renderText";
-import {
-  ensureUser,
-  getUser,
-  logEvent,
-  resetUserProgress,
-} from "./storage";
+import { ensureUser, getUser, logEvent, resetUserProgress } from "./storage";
 import { isAdmin, log } from "./utils";
 
 function adminOnly(handler: (ctx: Context) => Promise<void>) {
@@ -42,18 +37,18 @@ function getArgs(ctx: Context): string[] {
   return parts.slice(1);
 }
 
-function logAdminCommand(ctx: Context, command: string, args: string[]): void {
+async function logAdminCommand(ctx: Context, command: string, args: string[]): Promise<void> {
   const fromId = ctx.from?.id ?? null;
   log("admin_command_used", { command, fromId, args });
-  logEvent(fromId, "admin_command", { command, args });
+  await logEvent(fromId, "admin_command", { command, args });
 }
 
 export function registerAdminCommands(bot: Telegraf): void {
   bot.command(
     "stats",
     adminOnly(async (ctx) => {
-      logAdminCommand(ctx, "stats", []);
-      const s = computeGeneralStats();
+      await logAdminCommand(ctx, "stats", []);
+      const s = await computeGeneralStats();
       const lines = [
         "Общая статистика:",
         `Гостей в guests.json: ${s.guestsTotal}`,
@@ -73,8 +68,8 @@ export function registerAdminCommands(bot: Telegraf): void {
   bot.command(
     "stats_questions",
     adminOnly(async (ctx) => {
-      logAdminCommand(ctx, "stats_questions", []);
-      const aggs = computeQuestionAggregates();
+      await logAdminCommand(ctx, "stats_questions", []);
+      const aggs = await computeQuestionAggregates();
       if (aggs.length === 0) {
         await ctx.reply("Вопросов нет.");
         return;
@@ -95,13 +90,13 @@ export function registerAdminCommands(bot: Telegraf): void {
     "stats_question",
     adminOnly(async (ctx) => {
       const args = getArgs(ctx);
-      logAdminCommand(ctx, "stats_question", args);
+      await logAdminCommand(ctx, "stats_question", args);
       const qid = args[0];
       if (!qid) {
         await ctx.reply("Использование: /stats_question <questionId>");
         return;
       }
-      const detail = computeQuestionDetail(qid);
+      const detail = await computeQuestionDetail(qid);
       if (!detail) {
         await ctx.reply(`Вопрос "${qid}" не найден.`);
         return;
@@ -131,8 +126,8 @@ export function registerAdminCommands(bot: Telegraf): void {
   bot.command(
     "insights",
     adminOnly(async (ctx) => {
-      logAdminCommand(ctx, "insights", []);
-      const lines = computeInsights().map((i) => `${i.label}: ${i.count}`);
+      await logAdminCommand(ctx, "insights", []);
+      const lines = (await computeInsights()).map((i) => `${i.label}: ${i.count}`);
       if (lines.length === 0) {
         await ctx.reply("Данных пока нет.");
         return;
@@ -144,8 +139,8 @@ export function registerAdminCommands(bot: Telegraf): void {
   bot.command(
     "pending",
     adminOnly(async (ctx) => {
-      logAdminCommand(ctx, "pending", []);
-      const p = computePending();
+      await logAdminCommand(ctx, "pending", []);
+      const p = await computePending();
       const fmt = (
         label: string,
         list: Array<{ telegramId: number; name: string; username: string | null }>,
@@ -177,14 +172,14 @@ export function registerAdminCommands(bot: Telegraf): void {
     "user_status",
     adminOnly(async (ctx) => {
       const args = getArgs(ctx);
-      logAdminCommand(ctx, "user_status", args);
+      await logAdminCommand(ctx, "user_status", args);
       const idRaw = args[0];
       const id = Number(idRaw);
       if (!Number.isFinite(id) || !Number.isInteger(id) || id <= 0) {
         await ctx.reply("Использование: /user_status <telegramId>");
         return;
       }
-      const report = computeUserStatus(id);
+      const report = await computeUserStatus(id);
       const lines = [
         `Имя: ${report.guestName ?? "(нет в guests.json)"}`,
         `Telegram ID: ${id}`,
@@ -211,8 +206,8 @@ export function registerAdminCommands(bot: Telegraf): void {
   bot.command(
     "export",
     adminOnly(async (ctx) => {
-      logAdminCommand(ctx, "export", []);
-      const csv = buildAnswersCsv();
+      await logAdminCommand(ctx, "export", []);
+      const csv = await buildAnswersCsv();
       await ctx.replyWithDocument({
         source: Buffer.from(csv, "utf8"),
         filename: `answers_${Date.now()}.csv`,
@@ -223,8 +218,8 @@ export function registerAdminCommands(bot: Telegraf): void {
   bot.command(
     "export_summary",
     adminOnly(async (ctx) => {
-      logAdminCommand(ctx, "export_summary", []);
-      const csv = buildSummaryCsv();
+      await logAdminCommand(ctx, "export_summary", []);
+      const csv = await buildSummaryCsv();
       await ctx.replyWithDocument({
         source: Buffer.from(csv, "utf8"),
         filename: `summary_${Date.now()}.csv`,
@@ -236,7 +231,7 @@ export function registerAdminCommands(bot: Telegraf): void {
     "preview_final",
     adminOnly(async (ctx) => {
       const args = getArgs(ctx);
-      logAdminCommand(ctx, "preview_final", args);
+      await logAdminCommand(ctx, "preview_final", args);
       const idRaw = args[0];
       const id = Number(idRaw);
       if (!Number.isFinite(id) || !Number.isInteger(id) || id <= 0) {
@@ -257,7 +252,7 @@ export function registerAdminCommands(bot: Telegraf): void {
     "admin_reset",
     adminOnly(async (ctx) => {
       const args = getArgs(ctx);
-      logAdminCommand(ctx, "admin_reset", args);
+      await logAdminCommand(ctx, "admin_reset", args);
       const idRaw = args[0];
       const id = Number(idRaw);
       if (!Number.isFinite(id) || !Number.isInteger(id) || id <= 0) {
@@ -265,15 +260,16 @@ export function registerAdminCommands(bot: Telegraf): void {
         return;
       }
       const guest = getGuestById(id);
-      if (guest && !getUser(id)) {
-        ensureUser(guest, {});
+      const existing = await getUser(id);
+      if (guest && !existing) {
+        await ensureUser(guest, {});
       }
-      const ok = resetUserProgress(id);
+      const ok = await resetUserProgress(id);
       if (!ok) {
-        await ctx.reply(`Пользователь ${id} не найден в SQLite. Сброс не требуется.`);
+        await ctx.reply(`Пользователь ${id} не найден в БД. Сброс не требуется.`);
         return;
       }
-      logEvent(id, "admin_reset_user", { by: ctx.from?.id ?? null });
+      await logEvent(id, "admin_reset_user", { by: ctx.from?.id ?? null });
       await ctx.reply(`Прогресс пользователя ${id} сброшен.`);
     }),
   );
@@ -281,12 +277,12 @@ export function registerAdminCommands(bot: Telegraf): void {
   bot.command(
     "dev_clear_db",
     adminOnly(async (ctx) => {
-      logAdminCommand(ctx, "dev_clear_db", []);
+      await logAdminCommand(ctx, "dev_clear_db", []);
       if (config.nodeEnv === "production") {
         await ctx.reply("В production команда заблокирована.");
         return;
       }
-      clearAllTables();
+      await clearAllTables();
       await ctx.reply("База очищена.");
     }),
   );
@@ -294,7 +290,7 @@ export function registerAdminCommands(bot: Telegraf): void {
   bot.command(
     "guests",
     adminOnly(async (ctx) => {
-      logAdminCommand(ctx, "guests", []);
+      await logAdminCommand(ctx, "guests", []);
       const list = loadGuests();
       const lines = list.map(
         (g) =>

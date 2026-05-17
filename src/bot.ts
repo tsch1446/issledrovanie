@@ -32,9 +32,7 @@ function webAppKeyboard(label: string) {
 async function sendOpenAppMessage(ctx: Context, name: string): Promise<void> {
   const url = webAppUrl();
   if (!url) {
-    await ctx.reply(
-      "Mini App не настроен: PUBLIC_URL пуст. Скажи Сергею.",
-    );
+    await ctx.reply("Mini App не настроен: PUBLIC_URL пуст. Скажи Сергею.");
     return;
   }
   await ctx.reply(formatGreeting(name), webAppKeyboard("Открыть исследование"));
@@ -46,18 +44,18 @@ async function handleStart(ctx: Context): Promise<void> {
 
   const guest = getGuestById(telegramId);
   if (!guest) {
-    logEvent(telegramId, "unknown_user_start");
+    await logEvent(telegramId, "unknown_user_start");
     await ctx.reply(formatUnknownUser(telegramId));
     return;
   }
 
-  ensureUser(guest, {
+  await ensureUser(guest, {
     username: ctx.from?.username ?? null,
     firstName: ctx.from?.first_name ?? null,
     lastName: ctx.from?.last_name ?? null,
   });
 
-  const user = getUser(telegramId);
+  const user = await getUser(telegramId);
   if (user?.completed === 1) {
     const url = webAppUrl();
     if (!url) {
@@ -71,7 +69,11 @@ async function handleStart(ctx: Context): Promise<void> {
   await sendOpenAppMessage(ctx, guest.name);
 }
 
-export function buildBot(): Telegraf {
+let botInstance: Telegraf | null = null;
+
+export function getBot(): Telegraf {
+  if (botInstance) return botInstance;
+
   const bot = new Telegraf(config.botToken);
 
   bot.catch((err, ctx) => {
@@ -98,7 +100,7 @@ export function buildBot(): Telegraf {
   bot.command("restart", async (ctx) => {
     const id = getTelegramId(ctx);
     if (id === null) return;
-    const user = getUser(id);
+    const user = await getUser(id);
     if (user && user.completed === 1) {
       await ctx.reply(formatRestartBlocked());
       return;
@@ -109,5 +111,6 @@ export function buildBot(): Telegraf {
   registerAdminCommands(bot);
 
   log("bot_handlers_registered");
+  botInstance = bot;
   return bot;
 }
